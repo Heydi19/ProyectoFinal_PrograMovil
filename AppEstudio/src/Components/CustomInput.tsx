@@ -6,7 +6,7 @@ type CustomInputProps = {
     placeholder: string;
     value: string;
     onChangeText: (text:string) => void;
-    type?: "default" | "password" | "email" | "number";
+    type?: "default" | "password" | "email" | "number" | "user";
 };
 
 export default function CustomInput({
@@ -20,7 +20,9 @@ export default function CustomInput({
 
   const iconName: (typeof MaterialIcons)["name"] | undefined =
     type === "password" ? "lock" :
-      type === "email" ? "alternate-email" : undefined;
+      type === "email" ? "alternate-email" :
+        type === "number" ? "phone": 
+          type === "user" ? "person" : undefined;
 
   const keyboardType: KeyboardTypeOptions =
     type === "email"
