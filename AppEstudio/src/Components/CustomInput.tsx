@@ -36,7 +36,7 @@ export default function CustomInput({
     if (type === "email" && value.length > 0 && !value.includes("@")) {
       return "Correo inválido";
     }
-    if (type === "password" && value.length > 0 && value.length < 4) {
+    if (type === "password" && value.length > 0 && value.length < 6) {
       return "La contraseña es débil";
     }
     return null;
