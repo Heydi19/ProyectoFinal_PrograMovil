@@ -12,7 +12,7 @@ export const isValidText = (value: string, minLength: number = 2): boolean =>
   value.trim().length >= minLength;
 
 export function getFieldError(
-  type: "default" | "text" | "password" | "email" | "phone",
+  type: "default" | "user" | "password" | "email" | "number",
   value: string,
   required: boolean = true
 ): string | null {
@@ -27,9 +27,9 @@ export function getFieldError(
       return isValidEmail(value) ? null : "Correo inválido";
     case "password":
       return isValidPassword(value) ? null : "La contraseña debe tener al menos 6 caracteres";
-    case "phone":
+    case "number":
       return isValidPhone(value) ? null : "Teléfono inválido (8 dígitos)";
-    case "text":
+    case "user":
       return isValidText(value) ? null : "Debe tener al menos 2 caracteres";
     default:
       return null;

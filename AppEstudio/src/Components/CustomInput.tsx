@@ -4,16 +4,16 @@ import { KeyboardTypeOptions, StyleSheet, TextInput, TouchableOpacity, View, Tex
 import { getFieldError } from "../utils/validators";
 
 type CustomInputProps = {
-    placeholder: string;
-    value: string;
-    onChangeText: (text: string) => void;
-    type?: "default" | "password" | "email" | "number" | "phone" | "text";
-    required?: boolean;
-    forceShowError?: boolean;
+  placeholder: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  type?: "default" | "password" | "email" | "number" | "user";
+  required?: boolean;
+  forceShowError?: boolean;
 };
 
 export default function CustomInput({
-    placeholder,
+  placeholder,
   value,
   onChangeText,
   type = "default",
@@ -24,27 +24,26 @@ export default function CustomInput({
   const [touched, setTouched] = useState(false);
   const isPasswordField = type === "password";
 
-  const iconName: (typeof MaterialIcons)["name"] | undefined =
+  const iconName: React.ComponentProps<typeof MaterialIcons>["name"] | undefined =
     type === "password" ? "lock" :
       type === "email" ? "alternate-email" :
-        type === "phone" ? "phone" :
-          type === "text" ? "person" : undefined;
+        type === "number" ? "phone" :
+          type === "user" ? "person" : undefined;
 
   const keyboardType: KeyboardTypeOptions =
     type === "email"
       ? "email-address"
-      : type === "number" || type === "phone"
+      : type === "number"
         ? "number-pad"
         : "default";
 
-  const validationType = type === "number" ? "default" : type;
-  const errorMessage = getFieldError(validationType as any, value, required);
-  const showError = (touched || forceShowError) && !!errorMessage;
+  const error = getFieldError(type, value, required);
+  const showError = (touched || forceShowError) && error !== null;
 
   return (
     <View style={styles.wrapper}>
       <View style={[styles.inputContainer, showError ? styles.inputError : null]}>
-        {iconName && <MaterialIcons name={iconName as any} size={20} color="#206291" style={styles.leftIcon} />}
+        {iconName && <MaterialIcons name={iconName} size={20} color="#206291" style={styles.leftIcon} />}
         <TextInput
           style={styles.input}
           onChangeText={onChangeText}
@@ -62,7 +61,7 @@ export default function CustomInput({
           </TouchableOpacity>
         )}
       </View>
-      {showError && <Text style={styles.errorText}>{errorMessage}</Text>}
+      {showError && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 }

@@ -1,29 +1,46 @@
+import { View, Text, StyleSheet } from "react-native";
 import React from "react";
-import { SafeAreaView, StyleSheet, Text, View } from "react-native";
-import CustomCard from "../Components/CustomCard";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../Navegation/StackNavegation";
 
-export default function HomeScreen() {
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Inicio</Text>
 
-        <CustomCard
-          title="¡Bienvenido a AppEstudio!"
-          subtitle="Este es el tab de inicio de la aplicación."
-        />
+type HomeScreenProps = NativeStackScreenProps<RootStackParamList, "HomeScreen">;
 
-        <CustomCard
-          title="Estilo condicional"
-          subtitle="Las tarjetas y botones cambian de color según el estado, por ejemplo el 'variant' de CustomButton."
-        />
-      </View>
-    </SafeAreaView>
-  );
+// Usamos any o tipado opcional para permitir que funcione tanto en Stack como en Tabs
+export default function Home({ route }: any ) {
+    // Usamos encadenamiento opcional (?.) por si no se recibe el parámetro email
+    const {email} = route.params ?? { email: "Usuario" }; // Valor por defecto si no se recibe email
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <View style={styles.content}>
+                <Text style={styles.title}>¡Bienvenido!</Text>
+                <Text style={styles.subtitle}>{email}</Text>
+            </View>
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  content: { flex: 1, padding: 20 },
-  title: { fontSize: 24, fontWeight: "bold", color: "#206291", marginBottom: 20 },
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    content: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#206291',
+        marginBottom: 8,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#666',
+    },
 });

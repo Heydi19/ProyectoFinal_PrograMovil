@@ -1,15 +1,14 @@
-import React, { useEffect } from "react";
-import { View, Image, StyleSheet } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/RootNavigator";
+import React, { useEffect } from 'react';
+import { View, StyleSheet, Image } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 
-type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
-
-export default function SplashScreen({ navigation }: Props) {
+// SplashScreen actúa como la primera vista al abrir la app
+export default function SplashScreen({ navigation }: any) {
   useEffect(() => {
+    // Mantiene el logo en pantalla por 3 segundos antes de ir a Login
     const timer = setTimeout(() => {
-      navigation.replace("Login");
+      // replace elimina Splash del historial para no poder regresar con la flecha de "Atrás"
+      navigation.replace('LoginScreen');
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -19,7 +18,7 @@ export default function SplashScreen({ navigation }: Props) {
     <View style={styles.splashContainer}>
       <StatusBar style="light" />
       <Image
-        source={require("../../assets/icono3.jpg")}
+        source={require('../../assets/icono3.jpg')}
         style={styles.splashImage}
         resizeMode="contain"
       />
@@ -30,13 +29,13 @@ export default function SplashScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   splashContainer: {
     flex: 1,
-    backgroundColor: "#2b3a4e",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#2b3a4e', // Fondo del logo
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   splashImage: {
-    width: 220,
-    height: 220,
+    width: 200,
+    height: 200,
     borderRadius: 20,
   },
 });
