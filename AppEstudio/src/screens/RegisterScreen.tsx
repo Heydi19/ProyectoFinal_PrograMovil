@@ -64,7 +64,7 @@ export default function Register({ navigation }: any) {
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         
-        {/* Encabezado visualmente coherente */}
+        {/* Encabezado visual */}
         <View style={styles.headerContainer}>
           <Text style={styles.title}>Crear Cuenta</Text>
           <Text style={styles.subtitle}>Completa tus datos para empezar</Text>
@@ -125,7 +125,7 @@ export default function Register({ navigation }: any) {
   );
 }
 
-// Estilización con Flexbox (flexDirection, justifyContent, alignItems)
+// Estilización con Flexbox 
 const styles = StyleSheet.create({
   container: {
     flex: 1,

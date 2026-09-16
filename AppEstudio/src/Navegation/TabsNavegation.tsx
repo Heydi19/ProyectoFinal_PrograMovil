@@ -4,6 +4,7 @@ import Profile from "../screens/features/Profile";
 import Settings from "../screens/features/Settings";
 import HomeScreen from '../screens/HomeScreen';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
+import { useTheme } from '../Context/ThemeNavigator';
 
 
 // Tipado de las pestañas inferiores
@@ -18,13 +19,22 @@ const Tab = createBottomTabNavigator<TabParamList>();
 
 // Componente de navegación por pestañas inferiores
 export default function TabsNavigation() {
+
+  //consumimos los colores del tema activo (modo claro/oscuro)
+  const {colors} = useTheme();
+
   return (
     <Tab.Navigator
     // screenOptions permite configurar aspectos globales de la barra para todas las pestañas
       screenOptions={({ route }) => ({
         headerShown: false, // aqui ocultamos el encabezado superior
-        tabBarActiveTintColor: '#206291', // Color para la pestaña seleccionada
-        tabBarInactiveTintColor: '#8e8e93', // Color para las pestañas inactivas
+        tabBarActiveTintColor: colors.primary, // Color para la pestaña seleccionada
+        tabBarInactiveTintColor: colors.textSecondary, // Color para las pestañas inactivas
+
+        tabBarStyle: {
+          backgroundColor: colors.surface, // fondo dinamico de la barra segun el tema
+          borderTopColor: colors.border, // borde superior dinamico
+        },
 
         // Función dinámica para renderizar el icono según la ruta activa
         tabBarIcon: ({ color, size }) => {
@@ -46,7 +56,7 @@ export default function TabsNavigation() {
     >
       <Tab.Screen 
         name="HomeTab" 
-        component={HomeScreen} 
+        children={(props: any) => <HomeScreen {...props} />}
         options={{ title: 'Inicio' }} 
       />
       <Tab.Screen 

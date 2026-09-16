@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { use } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../../Context/ThemeNavigator';
 
 export default function Profile() {
+  const {colors} = useTheme();
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
-        <Text style={styles.title}>Perfil de Usuario </Text>
-        <Text style={styles.subtitle}>Gestión de datos personales y preferencias.</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Perfil de Usuario</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          Gestión de datos personales y preferencias.
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -16,7 +20,6 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: '#fff' 
 },
   content: { 
     flex: 1, 
@@ -27,12 +30,10 @@ const styles = StyleSheet.create({
   title: { 
     fontSize: 24, 
     fontWeight: 'bold', 
-    color: '#206291', 
     marginBottom: 10 
 },
   subtitle: { 
     fontSize: 14, 
-    color: '#666', 
     textAlign: 'center' 
  },
 });
