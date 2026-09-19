@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
 import { createContext, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 //1. tipado del objeto principal del contexto
 type User = {
@@ -11,8 +12,9 @@ type User = {
 
 type AuthContextType ={
     user: User | null;
-    login: (email: string) => boolean;
-    logout: ()=> {};
+    register: (email: string, pwd: string) => Promise<void>;
+    login: (email: string, pwd: string) => Promise<void> ;
+    logout: ()=> Promise<void>;
 }
 
 //2. creacion del contexto 
@@ -22,18 +24,28 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider = ({children}: {children: React.ReactNode}) =>{
     //declaracion de las 3 propiedad del contexto
     const [user, setUser] = useState<User>(null);
-    const login = (email: string): boolean =>{
-        const isAllowed = email.endsWith('.edu');
-        if (isAllowed){
-            setUser({email});
-        }
-        return isAllowed;
+
+    const register = async (email: string, pwd: string) =>{
+    const { data, error } = await supabase.auth.signUp({
+    email: 'example@email.com',
+    password: 'example-password',
+    })
+
+    if (error) throw error;
+        
+}
+
+    const login = async (email: string, pwd: string) =>{
+        const { error } = await supabase.auth.signInWithPassword({email, password:pwd});
+         if (error) throw error;
+       
     }
-    const logout = () =>{
-        return '';
+    const logout = async () =>{
+        const { error } = await supabase.auth.signOut()
+        
     }
     return (
-        <AuthContext.Provider value={{user, login, logout}}>
+        <AuthContext.Provider value={{user,register, login, logout}}>
             {children}
         </AuthContext.Provider>
     );
