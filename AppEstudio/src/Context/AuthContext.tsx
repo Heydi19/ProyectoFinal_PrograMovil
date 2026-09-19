@@ -27,9 +27,9 @@ export const AuthProvider = ({children}: {children: React.ReactNode}) =>{
 
     const register = async (email: string, pwd: string) =>{
     const { data, error } = await supabase.auth.signUp({
-    email: 'example@email.com',
-    password: 'example-password',
-    })
+    email,
+    password: pwd,
+    });
 
     if (error) throw error;
         
@@ -42,6 +42,7 @@ export const AuthProvider = ({children}: {children: React.ReactNode}) =>{
     }
     const logout = async () =>{
         const { error } = await supabase.auth.signOut()
+        if (error) throw error;
         
     }
     return (

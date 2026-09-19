@@ -4,6 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import CustomInput from '../Components/CustomInput';
 import CustomButton from '../Components/CustomButton';
+import { useAuth } from '../Context/AuthContext';
+
+
 
 
 
@@ -14,6 +17,7 @@ export default function Register({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const {register} = useAuth();
 
   // Validar campos obligatorios, formato de email, teléfono y contraseña
   const validateForm = () => {
@@ -47,16 +51,24 @@ export default function Register({ navigation }: any) {
   };
 
   // Acción del botón Registrarse
-  const handleRegister = () => {
-    if (validateForm()) {
-      Alert.alert('¡Registro Exitoso!', 'Tu cuenta ha sido creada correctamente.', [
-        {
-          text: 'Continuar',
-          // Redirección de pantalla según el Stack Navigation
-          onPress: () => navigation.navigate('LoginScreen'),
-        },
-      ]);
+  const handleRegister = async () => {
+
+    try{
+      await register(email,password);
+      navigation.navigate("LoginScreen");
+    } catch (error:any){
+      console.log("error al registrarse: ", error.messeage);
+
     }
+    //if (validateForm()) {
+      //Alert.alert('¡Registro Exitoso!', 'Tu cuenta ha sido creada correctamente.', [
+       // {
+        //  text: 'Continuar',
+          // Redirección de pantalla según el Stack Navigation
+       //   onPress: () => navigation.navigate('LoginScreen'),
+       // },
+     // ]);
+    
   };
 
   return (
