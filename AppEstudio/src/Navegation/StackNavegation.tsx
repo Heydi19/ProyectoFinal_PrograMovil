@@ -1,10 +1,10 @@
 import React from 'react';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Login from '../screens/LoginScreen';
-import Home from '../screens/HomeScreen';
 import TabsNavigation from './TabsNavegation';
 import Register from '../screens/RegisterScreen';
 import SplashScreen from '../screens/SplashScreen';
+import Home from '../screens/features/HomeScreen';
 
 
 //Tipado de rutas del Stack 
