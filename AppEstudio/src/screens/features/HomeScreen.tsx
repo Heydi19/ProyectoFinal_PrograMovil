@@ -17,7 +17,6 @@ export default function HomeScreen({ navigation }: any) {
   const { user } = useAuth();
   const { t } = useLanguage();
 
-  // Estados dinámicos iniciales en 0 para usuarios nuevos
   const [activeTasks, setActiveTasks] = useState(0);
   const [studyHoursToday, setStudyHoursToday] = useState('0 h');
   const [nextExams, setNextExams] = useState(0);
@@ -37,7 +36,7 @@ export default function HomeScreen({ navigation }: any) {
             </Text>
             <Text style={[styles.userName, { color: colors.text }]}>
               {user?.fullName || user?.email || 'Estudiante'}
-            </Text> 
+            </Text>
           </View>
 
           <TouchableOpacity
@@ -57,24 +56,25 @@ export default function HomeScreen({ navigation }: any) {
           <View style={styles.bannerHeader}>
             <View style={styles.bannerTag}>
               <Ionicons name="sparkles" size={14} color="#FFE082" />
-              <Text style={styles.bannerTagText}>Resumen del Día</Text>
+              <Text style={styles.bannerTagText}>{t('home_banner_tag')}</Text>
             </View>
             <Ionicons name="calendar-outline" size={22} color="#FFFFFF" />
           </View>
 
-          <Text style={styles.bannerTitle}>Plan de hoy</Text>
+          <Text style={styles.bannerTitle}>{t('home_banner_title')}</Text>
           <Text style={styles.bannerSubtitle}>
             {activeTasks === 0 && nextExams === 0
-              ? 'No tienes tareas ni exámenes pendientes. ¡Agrega uno para empezar!'
-              : `Tienes ${activeTasks} tareas pendientes y ${nextExams} examen esta semana.`}
+              ? t('home_banner_subtitle_empty')
+              : t('home_banner_subtitle', { tasks: activeTasks, exams: nextExams })}
           </Text>
 
-          {/* Barra de progreso dinámico */}
           <View style={styles.progressContainer}>
             <View style={styles.progressBarBg}>
               <View style={[styles.progressBarFill, { width: `${progressPercentage}%` }]} />
             </View>
-            <Text style={styles.progressText}>{progressPercentage}% completado</Text>
+            <Text style={styles.progressText}>
+              {t('home_progress_completed', { percent: progressPercentage })}
+            </Text>
           </View>
 
           <TouchableOpacity
@@ -82,18 +82,17 @@ export default function HomeScreen({ navigation }: any) {
             onPress={() => navigation.navigate('tasks')}
             activeOpacity={0.8}
           >
-            <Text style={styles.bannerButtonText}>Ver Pendientes</Text>
+            <Text style={styles.bannerButtonText}>{t('home_view_pending')}</Text>
             <Ionicons name="arrow-forward" size={16} color="#1d6395" />
           </TouchableOpacity>
         </View>
 
         {/* SECCIÓN 1: RESUMEN ACADÉMICO */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Resumen Académico
+          {t('home_academic_summary')}
         </Text>
 
         <View style={styles.statsGrid}>
-          {/* Tarjeta Tareas */}
           <TouchableOpacity
             style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => navigation.navigate('tasks')}
@@ -106,11 +105,10 @@ export default function HomeScreen({ navigation }: any) {
               {activeTasks}
             </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Tareas activas
+              {t('home_active_tasks_label')}
             </Text>
           </TouchableOpacity>
 
-          {/* Tarjeta Horas de Estudio */}
           <TouchableOpacity
             style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => navigation.navigate('tracker')}
@@ -123,11 +121,10 @@ export default function HomeScreen({ navigation }: any) {
               {studyHoursToday}
             </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Estudio hoy
+              {t('home_study_today_label')}
             </Text>
           </TouchableOpacity>
 
-          {/* Tarjeta Exámenes */}
           <TouchableOpacity
             style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => navigation.navigate('exams')}
@@ -140,14 +137,14 @@ export default function HomeScreen({ navigation }: any) {
               {nextExams}
             </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Examen próximo
+              {t('home_next_exam_label')}
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* SECCIÓN 2: ACCESO RÁPIDO */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Acceso Rápido
+          {t('home_quick_access')}
         </Text>
 
         <View style={styles.quickAccessGroup}>
@@ -162,10 +159,10 @@ export default function HomeScreen({ navigation }: any) {
               </View>
               <View>
                 <Text style={[styles.quickAccessTitle, { color: colors.text }]}>
-                  Iniciar Cronómetro
+                  {t('home_start_timer')}
                 </Text>
                 <Text style={[styles.quickAccessSubtitle, { color: colors.textSecondary }]}>
-                  Registra tu tiempo de estudio
+                  {t('home_start_timer_subtitle')}
                 </Text>
               </View>
             </View>
@@ -183,10 +180,10 @@ export default function HomeScreen({ navigation }: any) {
               </View>
               <View>
                 <Text style={[styles.quickAccessTitle, { color: colors.text }]}>
-                  Nueva Tarea
+                  {t('home_new_task')}
                 </Text>
                 <Text style={[styles.quickAccessSubtitle, { color: colors.textSecondary }]}>
-                  Agrega entregas por materia
+                  {t('home_new_task_subtitle')}
                 </Text>
               </View>
             </View>
@@ -204,10 +201,10 @@ export default function HomeScreen({ navigation }: any) {
               </View>
               <View>
                 <Text style={[styles.quickAccessTitle, { color: colors.text }]}>
-                  Ver Exámenes
+                  {t('home_view_exams')}
                 </Text>
                 <Text style={[styles.quickAccessSubtitle, { color: colors.textSecondary }]}>
-                  Revisa fechas y evaluaciones
+                  {t('home_view_exams_subtitle')}
                 </Text>
               </View>
             </View>
@@ -224,7 +221,7 @@ export default function HomeScreen({ navigation }: any) {
         >
           <Ionicons name="bulb-outline" size={22} color={colors.primary} />
           <Text style={[styles.quoteText, { color: colors.text }]}>
-            "El éxito es la suma de pequeños esfuerzos repetidos día tras día."
+            "{t('home_quote')}"
           </Text>
         </View>
 

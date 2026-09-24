@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../Context/ThemeNavigator';
+import { useLanguage } from '../../Context/LanguageContext';
 
 interface StudySession {
   id: string;
@@ -12,6 +13,7 @@ interface StudySession {
 
 export default function StudyTrackerScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
 
   const [seconds, setSeconds] = useState(0);
   const [isActive, setIsActive] = useState(false);
@@ -46,7 +48,7 @@ export default function StudyTrackerScreen() {
       id: Date.now().toString(),
       subject: subject,
       minutes: Math.max(1, Math.floor(seconds / 60)),
-      date: 'Hoy',
+      date: 'Hoy', // valor interno, no se traduce (lo usa HomeScreen para calcular el total de hoy)
     };
 
     setSessions([newSession, ...sessions]);
@@ -65,16 +67,16 @@ export default function StudyTrackerScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      
+
       {/* Encabezado */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Registro de Estudio</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('tracker_title')}</Text>
       </View>
 
       {/* Tarjeta de Estadísticas de Progreso */}
       <View style={[styles.statsCard, { backgroundColor: colors.surface }]}>
         <Text style={[styles.statsTitle, { color: colors.textSecondary }]}>
-          Tiempo Total Registrado
+          {t('tracker_total_time_label')}
         </Text>
         <Text style={[styles.statsValue, { color: colors.text }]}>
           {Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m
@@ -85,7 +87,7 @@ export default function StudyTrackerScreen() {
       <View style={[styles.timerContainer, { backgroundColor: colors.surface }]}>
         <TextInput
           style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-          placeholder="Asignatura a estudiar (ej. Prog. Móvil)..."
+          placeholder={t('tracker_subject_placeholder')}
           placeholderTextColor={colors.textSecondary}
           value={subject}
           onChangeText={setSubject}
@@ -105,7 +107,7 @@ export default function StudyTrackerScreen() {
             onPress={toggleTimer}
           >
             <Text style={styles.buttonText}>
-              {isActive ? 'Pausar' : 'Iniciar'}
+              {isActive ? t('tracker_pause') : t('tracker_start')}
             </Text>
           </TouchableOpacity>
 
@@ -113,18 +115,18 @@ export default function StudyTrackerScreen() {
             style={[styles.timerButton, { backgroundColor: '#388e3c' }]}
             onPress={saveSession}
           >
-            <Text style={styles.buttonText}>Guardar</Text>
+            <Text style={styles.buttonText}>{t('tracker_save')}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Historial de Sesiones */}
-      <Text style={[styles.subtitle, { color: colors.text }]}>Historial Reciente</Text>
-      
+      <Text style={[styles.subtitle, { color: colors.text }]}>{t('tracker_history_title')}</Text>
+
       {sessions.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            Aún no has registrado sesiones de estudio.
+            {t('tracker_empty_message')}
           </Text>
         </View>
       ) : (

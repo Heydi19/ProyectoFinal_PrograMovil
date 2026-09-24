@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../Context/ThemeNavigator';
+import { useLanguage } from '../../Context/LanguageContext';
 
 interface Exam {
   id: string;
@@ -20,11 +21,10 @@ interface Exam {
 
 export default function ExamsScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
 
-  // Arreglo inicial vacío para nuevos usuarios
   const [exams, setExams] = useState<Exam[]>([]);
 
-  // Estados para el formulario de registro
   const [subject, setSubject] = useState('');
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
@@ -43,7 +43,6 @@ export default function ExamsScreen() {
 
     setExams([...exams, newExam]);
 
-    // Limpiar campos
     setSubject('');
     setTitle('');
     setDate('');
@@ -52,26 +51,26 @@ export default function ExamsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      
+
       {/* Encabezado */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Calendario de Exámenes</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('exams_header_title')}</Text>
       </View>
 
       {/* Formulario */}
       <View style={[styles.formContainer, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.formTitle, { color: colors.text }]}>Programar Nuevo Examen</Text>
-        
+        <Text style={[styles.formTitle, { color: colors.text }]}>{t('exams_form_title')}</Text>
+
         <TextInput
           style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-          placeholder="Materia (ej. Prog. Móvil)..."
+          placeholder={t('exams_subject_placeholder')}
           placeholderTextColor={colors.textSecondary}
           value={subject}
           onChangeText={setSubject}
         />
         <TextInput
           style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-          placeholder="Nombre/Descripción del examen..."
+          placeholder={t('exams_description_placeholder')}
           placeholderTextColor={colors.textSecondary}
           value={title}
           onChangeText={setTitle}
@@ -79,14 +78,14 @@ export default function ExamsScreen() {
         <View style={styles.rowInputs}>
           <TextInput
             style={[styles.input, styles.halfInput, { color: colors.text, borderColor: colors.border }]}
-            placeholder="Fecha (AAAA-MM-DD)"
+            placeholder={t('exams_date_placeholder')}
             placeholderTextColor={colors.textSecondary}
             value={date}
             onChangeText={setDate}
           />
           <TextInput
             style={[styles.input, styles.halfInput, { color: colors.text, borderColor: colors.border }]}
-            placeholder="Hora (ej. 14:00)"
+            placeholder={t('exams_time_placeholder')}
             placeholderTextColor={colors.textSecondary}
             value={time}
             onChangeText={setTime}
@@ -94,17 +93,17 @@ export default function ExamsScreen() {
         </View>
 
         <TouchableOpacity style={styles.addButton} onPress={handleAddExam}>
-          <Text style={styles.addButtonText}>Guardar Examen</Text>
+          <Text style={styles.addButtonText}>{t('exams_save_button')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Lista de próximos exámenes */}
-      <Text style={[styles.subtitle, { color: colors.text }]}>Próximas Evaluaciones</Text>
+      <Text style={[styles.subtitle, { color: colors.text }]}>{t('exams_upcoming_title')}</Text>
 
       {exams.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            No tienes exámenes programados.
+            {t('exams_empty_message')}
           </Text>
         </View>
       ) : (

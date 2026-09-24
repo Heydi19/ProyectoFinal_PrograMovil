@@ -24,17 +24,16 @@ export default function SettingsScreen({ navigation }: any) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [examReminders, setExamReminders] = useState(true);
 
-  // Estado del modal de cambiar contraseña
   const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
 
   const handleLogout = async () => {
-    Alert.alert('Cerrar Sesión', '¿Estás seguro de que deseas salir?', [
-      { text: 'Cancelar', style: 'cancel' },
+    Alert.alert(t('logout'), t('settings_logout_confirm_message'), [
+      { text: t('settings_logout_cancel'), style: 'cancel' },
       {
-        text: 'Salir',
+        text: t('settings_logout_confirm'),
         style: 'destructive',
         onPress: async () => {
           await supabase.auth.signOut();
@@ -44,7 +43,6 @@ export default function SettingsScreen({ navigation }: any) {
     ]);
   };
 
-  // Actualiza la contraseña en Supabase
   const handleChangePassword = async () => {
     if (newPassword.length < 6) {
       Alert.alert(t('change_password_short_title'), t('change_password_short'));
@@ -65,7 +63,7 @@ export default function SettingsScreen({ navigation }: any) {
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      Alert.alert('Error', error.message ?? t('change_password_generic_error'));
+      Alert.alert(t('generic_error_title'), error.message ?? t('change_password_generic_error'));
     } finally {
       setSavingPassword(false);
     }
@@ -75,16 +73,14 @@ export default function SettingsScreen({ navigation }: any) {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* Encabezado */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>{t('settings')}</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            Personaliza tu experiencia y gestiona tu cuenta
+            {t('settings_subtitle')}
           </Text>
         </View>
 
-        {/* SECCIÓN 1: APARIENCIA */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Apariencia</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings_appearance_section')}</Text>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <View style={styles.optionRow}>
             <View style={styles.optionLeft}>
@@ -94,7 +90,7 @@ export default function SettingsScreen({ navigation }: any) {
               <View>
                 <Text style={[styles.optionTitle, { color: colors.text }]}>{t('dark_mode')}</Text>
                 <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>
-                  {isDark ? 'Tema oscuro activo' : 'Tema claro activo'}
+                  {isDark ? t('settings_theme_dark_active') : t('settings_theme_light_active')}
                 </Text>
               </View>
             </View>
@@ -107,8 +103,7 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* SECCIÓN NUEVA: IDIOMA */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Idioma / Language</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings_language_section')}</Text>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <View style={styles.optionRow}>
             <View style={styles.optionLeft}>
@@ -116,7 +111,7 @@ export default function SettingsScreen({ navigation }: any) {
                 <Ionicons name="language-outline" size={20} color={colors.primary} />
               </View>
               <Text style={[styles.optionTitle, { color: colors.text }]}>
-                {locale === 'es' ? 'Español' : 'English'}
+                {locale === 'es' ? t('language_spanish') : t('language_english')}
               </Text>
             </View>
 
@@ -145,8 +140,7 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* SECCIÓN 2: NOTIFICACIONES */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Notificaciones</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings_notifications_section')}</Text>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <View style={styles.optionRow}>
             <View style={styles.optionLeft}>
@@ -154,9 +148,9 @@ export default function SettingsScreen({ navigation }: any) {
                 <Ionicons name="notifications-outline" size={20} color="#4CAF50" />
               </View>
               <View>
-                <Text style={[styles.optionTitle, { color: colors.text }]}>Recordatorios de tareas</Text>
+                <Text style={[styles.optionTitle, { color: colors.text }]}>{t('settings_task_reminders_title')}</Text>
                 <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>
-                  Alertas sobre entregas pendientes
+                  {t('settings_task_reminders_subtitle')}
                 </Text>
               </View>
             </View>
@@ -176,9 +170,9 @@ export default function SettingsScreen({ navigation }: any) {
                 <Ionicons name="calendar-outline" size={20} color="#FF9800" />
               </View>
               <View>
-                <Text style={[styles.optionTitle, { color: colors.text }]}>Alertas de Exámenes</Text>
+                <Text style={[styles.optionTitle, { color: colors.text }]}>{t('settings_exam_alerts_title')}</Text>
                 <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>
-                  Avisos previos a tus evaluaciones
+                  {t('settings_exam_alerts_subtitle')}
                 </Text>
               </View>
             </View>
@@ -191,8 +185,7 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* SECCIÓN 3: CUENTA Y SEGURIDAD */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Cuenta y Seguridad</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings_account_section')}</Text>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <TouchableOpacity
             style={styles.optionRow}
@@ -202,7 +195,7 @@ export default function SettingsScreen({ navigation }: any) {
               <View style={[styles.iconContainer, { backgroundColor: colors.primary + '18' }]}>
                 <Ionicons name="person-outline" size={20} color={colors.primary} />
               </View>
-              <Text style={[styles.optionTitle, { color: colors.text }]}>Editar Perfil</Text>
+              <Text style={[styles.optionTitle, { color: colors.text }]}>{t('settings_edit_profile')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -217,21 +210,20 @@ export default function SettingsScreen({ navigation }: any) {
               <View style={[styles.iconContainer, { backgroundColor: colors.primary + '18' }]}>
                 <Ionicons name="key-outline" size={20} color={colors.primary} />
               </View>
-              <Text style={[styles.optionTitle, { color: colors.text }]}>Cambiar contraseña</Text>
+              <Text style={[styles.optionTitle, { color: colors.text }]}>{t('settings_change_password')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        {/* SECCIÓN 4: INFORMACIÓN Y SOPORTE */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Información</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings_info_section')}</Text>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <TouchableOpacity style={styles.optionRow}>
             <View style={styles.optionLeft}>
               <View style={[styles.iconContainer, { backgroundColor: '#9C27B018' }]}>
                 <Ionicons name="help-circle-outline" size={20} color="#9C27B0" />
               </View>
-              <Text style={[styles.optionTitle, { color: colors.text }]}>Ayuda y Soporte</Text>
+              <Text style={[styles.optionTitle, { color: colors.text }]}>{t('settings_help_support')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -244,14 +236,13 @@ export default function SettingsScreen({ navigation }: any) {
                 <Ionicons name="information-circle-outline" size={20} color="#607D8B" />
               </View>
               <View>
-                <Text style={[styles.optionTitle, { color: colors.text }]}>Versión de la App</Text>
+                <Text style={[styles.optionTitle, { color: colors.text }]}>{t('settings_app_version')}</Text>
                 <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>v1.0.0</Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Botón de Cerrar Sesión */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#FFFFFF" />
           <Text style={styles.logoutText}>{t('logout')}</Text>
@@ -259,17 +250,16 @@ export default function SettingsScreen({ navigation }: any) {
 
       </ScrollView>
 
-      {/* MODAL: CAMBIAR CONTRASEÑA */}
       <Modal visible={isPasswordModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Cambiar Contraseña</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('settings_password_modal_title')}</Text>
 
             <TextInput
               style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
               value={newPassword}
               onChangeText={setNewPassword}
-              placeholder="Nueva contraseña"
+              placeholder={t('settings_new_password_placeholder')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry
             />
@@ -277,7 +267,7 @@ export default function SettingsScreen({ navigation }: any) {
               style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              placeholder="Confirmar contraseña"
+              placeholder={t('settings_confirm_password_placeholder')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry
             />
@@ -291,7 +281,7 @@ export default function SettingsScreen({ navigation }: any) {
                   setConfirmPassword('');
                 }}
               >
-                <Text style={styles.modalBtnText}>Cancelar</Text>
+                <Text style={styles.modalBtnText}>{t('settings_logout_cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -299,7 +289,9 @@ export default function SettingsScreen({ navigation }: any) {
                 onPress={handleChangePassword}
                 disabled={savingPassword}
               >
-                <Text style={styles.modalBtnText}>{savingPassword ? 'Guardando...' : 'Actualizar'}</Text>
+                <Text style={styles.modalBtnText}>
+                  {savingPassword ? t('settings_password_saving') : t('settings_password_update')}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

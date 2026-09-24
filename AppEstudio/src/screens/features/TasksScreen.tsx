@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
 import { useTheme } from '../../Context/ThemeNavigator';
+import { useLanguage } from '../../Context/LanguageContext';
 
 interface Task {
   id: string;
@@ -22,6 +23,7 @@ interface Task {
 
 export default function TasksScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
 
   // Estados del formulario para nueva tarea
   const [taskTitle, setTaskTitle] = useState('');
@@ -35,10 +37,9 @@ export default function TasksScreen() {
   const [editSubject, setEditSubject] = useState('');
   const [editProfessor, setEditProfessor] = useState('');
 
-  // ✅ Lista de tareas vacía por defecto para nuevos usuarios
+  // Lista de tareas vacía por defecto para nuevos usuarios
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  // Agregar nueva tarea
   const handleAddTask = () => {
     if (!taskTitle.trim() || !subjectName.trim()) return;
 
@@ -46,7 +47,7 @@ export default function TasksScreen() {
       id: Date.now().toString(),
       title: taskTitle.trim(),
       subject: subjectName.trim(),
-      professor: professorName.trim() || 'No especificado',
+      professor: professorName.trim() || t('tasks_no_professor'),
       completed: false,
     };
 
@@ -56,7 +57,6 @@ export default function TasksScreen() {
     setProfessorName('');
   };
 
-  // Abrir modal de edición con los datos actuales de la tarea
   const handleOpenEditModal = (task: Task) => {
     setEditingTaskId(task.id);
     setEditTitle(task.title);
@@ -65,7 +65,6 @@ export default function TasksScreen() {
     setIsEditModalVisible(true);
   };
 
-  // Guardar los cambios editados
   const handleSaveEdit = () => {
     if (!editTitle.trim() || !editSubject.trim()) return;
 
@@ -76,7 +75,7 @@ export default function TasksScreen() {
               ...task,
               title: editTitle.trim(),
               subject: editSubject.trim(),
-              professor: editProfessor.trim() || 'No especificado',
+              professor: editProfessor.trim() || t('tasks_no_professor'),
             }
           : task
       )
@@ -86,7 +85,6 @@ export default function TasksScreen() {
     setEditingTaskId(null);
   };
 
-  // Alternar estado de completado
   const toggleTaskComplete = (id: string) => {
     setTasks(
       tasks.map((task) =>
@@ -95,7 +93,6 @@ export default function TasksScreen() {
     );
   };
 
-  // Agrupar tareas por Asignatura
   const groupedTasks = tasks.reduce((acc, task) => {
     const key = task.subject;
     if (!acc[key]) {
@@ -111,22 +108,22 @@ export default function TasksScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {/* Encabezado */}
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Tareas Pendientes</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{t('tasks_header_title')}</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            Organiza y gestiona tus pendientes por clase
+            {t('tasks_header_subtitle')}
           </Text>
         </View>
 
         {/* Formulario para agregar tarea */}
         <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.formTitle, { color: colors.text }]}>Nueva Tarea</Text>
-          
+          <Text style={[styles.formTitle, { color: colors.text }]}>{t('tasks_form_title')}</Text>
+
           <TextInput
             style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-            placeholder="Nombre de la tarea..."
+            placeholder={t('tasks_title_placeholder')}
             placeholderTextColor={colors.textSecondary}
             value={taskTitle}
             onChangeText={setTaskTitle}
@@ -135,7 +132,7 @@ export default function TasksScreen() {
           <View style={styles.rowInputs}>
             <TextInput
               style={[styles.input, styles.halfInput, { color: colors.text, borderColor: colors.border }]}
-              placeholder="Asignatura"
+              placeholder={t('tasks_subject_placeholder')}
               placeholderTextColor={colors.textSecondary}
               value={subjectName}
               onChangeText={setSubjectName}
@@ -143,7 +140,7 @@ export default function TasksScreen() {
 
             <TextInput
               style={[styles.input, styles.halfInput, { color: colors.text, borderColor: colors.border }]}
-              placeholder="Profesor"
+              placeholder={t('tasks_professor_placeholder')}
               placeholderTextColor={colors.textSecondary}
               value={professorName}
               onChangeText={setProfessorName}
@@ -152,7 +149,7 @@ export default function TasksScreen() {
 
           <TouchableOpacity style={styles.addButton} onPress={handleAddTask}>
             <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.addButtonText}>Agregar Tarea</Text>
+            <Text style={styles.addButtonText}>{t('tasks_add_button')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -161,11 +158,10 @@ export default function TasksScreen() {
           <View style={styles.emptyContainer}>
             <Ionicons name="checkmark-done-circle-outline" size={48} color={colors.textSecondary} />
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              No tienes tareas pendientes. ¡Crea una arriba para comenzar!
+              {t('tasks_empty_message')}
             </Text>
           </View>
         ) : (
-          /* Lista agrupada por Asignatura */
           Object.keys(groupedTasks).map((subject) => {
             const group = groupedTasks[subject];
             return (
@@ -241,23 +237,23 @@ export default function TasksScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Editar Tarea y Profesor</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('tasks_edit_modal_title')}</Text>
 
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Nombre de la tarea</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('tasks_edit_title_label')}</Text>
             <TextInput
               style={[styles.input, { color: colors.text, borderColor: colors.border }]}
               value={editTitle}
               onChangeText={setEditTitle}
             />
 
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Asignatura</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('tasks_edit_subject_label')}</Text>
             <TextInput
               style={[styles.input, { color: colors.text, borderColor: colors.border }]}
               value={editSubject}
               onChangeText={setEditSubject}
             />
 
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Nombre del Profesor</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('tasks_edit_professor_label')}</Text>
             <TextInput
               style={[styles.input, { color: colors.text, borderColor: colors.border }]}
               value={editProfessor}
@@ -269,14 +265,14 @@ export default function TasksScreen() {
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setIsEditModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                <Text style={styles.cancelButtonText}>{t('tasks_cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, styles.saveButton]}
                 onPress={handleSaveEdit}
               >
-                <Text style={styles.saveButtonText}>Guardar</Text>
+                <Text style={styles.saveButtonText}>{t('tasks_save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
