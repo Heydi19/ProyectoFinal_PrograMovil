@@ -1,4 +1,3 @@
-// 1. IMPORTACIONES DE REACT Y REACT NATIVE
 import React, { useState } from 'react';
 import {
   View,
@@ -9,11 +8,8 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// Importación del hook para el tema (Modo Claro/Oscuro)
 import { useTheme } from '../../Context/ThemeNavigator';
 
-// 2. DEFINICIÓN DE TIPOS (TYPESCRIPT)
 interface Exam {
   id: string;
   subject: string;
@@ -23,14 +19,10 @@ interface Exam {
 }
 
 export default function ExamsScreen() {
-  // 3. CONTEXTO Y ESTADOS LOCALES
   const { colors } = useTheme();
 
-  // Lista de exámenes iniciales de ejemplo
-  const [exams, setExams] = useState<Exam[]>([
-    { id: '1', subject: 'Prog. Móvil', title: 'Examen Parcial 1', date: '2026-09-28', time: '18:00' },
-    { id: '2', subject: 'Base de Datos', title: 'Evaluación Práctica', date: '2026-10-02', time: '14:00' },
-  ]);
+  // Arreglo inicial vacío para nuevos usuarios
+  const [exams, setExams] = useState<Exam[]>([]);
 
   // Estados para el formulario de registro
   const [subject, setSubject] = useState('');
@@ -38,7 +30,6 @@ export default function ExamsScreen() {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
 
-  // 4. FUNCIONES LÓGICAS
   const handleAddExam = () => {
     if (!subject.trim() || !title.trim() || !date.trim()) return;
 
@@ -59,7 +50,6 @@ export default function ExamsScreen() {
     setTime('');
   };
 
-  // 5. INTERFAZ VISUAL (RENDER)
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       
@@ -68,7 +58,7 @@ export default function ExamsScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Calendario de Exámenes</Text>
       </View>
 
-      {/* Formulario para registrar un nuevo examen */}
+      {/* Formulario */}
       <View style={[styles.formContainer, { backgroundColor: colors.surface }]}>
         <Text style={[styles.formTitle, { color: colors.text }]}>Programar Nuevo Examen</Text>
         
@@ -111,27 +101,34 @@ export default function ExamsScreen() {
       {/* Lista de próximos exámenes */}
       <Text style={[styles.subtitle, { color: colors.text }]}>Próximas Evaluaciones</Text>
 
-      <FlatList
-        data={exams}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={[styles.examCard, { backgroundColor: colors.surface }]}>
-            <View style={styles.examBadge}>
-              <Text style={styles.examBadgeText}>📅 {item.date}</Text>
-              <Text style={styles.examTimeText}>⏰ {item.time}</Text>
+      {exams.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            No tienes exámenes programados.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={exams}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={[styles.examCard, { backgroundColor: colors.surface }]}>
+              <View style={styles.examBadge}>
+                <Text style={styles.examBadgeText}>📅 {item.date}</Text>
+                <Text style={styles.examTimeText}>⏰ {item.time}</Text>
+              </View>
+              <View style={styles.examInfo}>
+                <Text style={[styles.examSubject, { color: colors.text }]}>{item.subject}</Text>
+                <Text style={[styles.examTitle, { color: colors.textSecondary }]}>{item.title}</Text>
+              </View>
             </View>
-            <View style={styles.examInfo}>
-              <Text style={[styles.examSubject, { color: colors.text }]}>{item.subject}</Text>
-              <Text style={[styles.examTitle, { color: colors.textSecondary }]}>{item.title}</Text>
-            </View>
-          </View>
-        )}
-      />
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
-// 6. ESTILOS
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   header: { marginBottom: 16 },
@@ -174,4 +171,6 @@ const styles = StyleSheet.create({
   examInfo: { flex: 1 },
   examSubject: { fontSize: 16, fontWeight: 'bold' },
   examTitle: { fontSize: 13, marginTop: 2 },
+  emptyContainer: { alignItems: 'center', marginTop: 20 },
+  emptyText: { fontSize: 14 },
 });

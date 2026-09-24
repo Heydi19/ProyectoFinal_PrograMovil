@@ -15,37 +15,38 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 
-import { supabase } from '../../lib/supabase'; // Ajusta la ruta a tu cliente de Supabase
+import { supabase } from '../../lib/supabase';
 import { useTheme } from '../../Context/ThemeNavigator';
 
 export default function ProfileScreen({ navigation }: any) {
   const { colors } = useTheme();
 
-  // Estados de carga e imagen
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
-  // Campos de perfil editables
-  const [fullName, setFullName] = useState('Estudiante');
-  const [username, setUsername] = useState('usuario');
-  const [university, setUniversity] = useState('UNITEC');
-  const [degree, setDegree] = useState('Ing. en Desarrollo de Software');
+  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
+  const [university, setUniversity] = useState('');
+  const [degree, setDegree] = useState('');
   const [gender, setGender] = useState('No especificado');
 
-  // Control de Modal
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+
+  // Estado del modal de cambiar contraseña
+  const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
     fetchProfile();
   }, []);
 
-  // 1. Obtener datos del usuario autenticado
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
         const user = session.user;
@@ -53,10 +54,15 @@ export default function ProfileScreen({ navigation }: any) {
 
         const meta = user.user_metadata || {};
         if (meta.avatar_url) setProfileImage(meta.avatar_url);
+
         if (meta.full_name) setFullName(meta.full_name);
+        else setFullName(user.email?.split('@')[0] ?? 'Estudiante');
+
         if (meta.username) setUsername(meta.username);
+        else setUsername(user.email?.split('@')[0] ?? 'usuario');
+
         if (meta.university) setUniversity(meta.university);
-        if (meta.degree) setDegree(meta.degree);
+        if (meta.career) setDegree(meta.career);
         if (meta.gender) setGender(meta.gender);
       }
     } catch (error) {
@@ -66,7 +72,6 @@ export default function ProfileScreen({ navigation }: any) {
     }
   };
 
-  // 2. Guardar información editada en Supabase Metadata
   const saveProfileData = async () => {
     try {
       setLoading(true);
@@ -82,7 +87,7 @@ export default function ProfileScreen({ navigation }: any) {
           full_name: fullName,
           username: username,
           university: university,
-          degree: degree,
+          career: degree,
           gender: gender,
         },
       });
@@ -98,7 +103,6 @@ export default function ProfileScreen({ navigation }: any) {
     }
   };
 
-  // 3. Seleccionar y subir foto de perfil a Supabase Storage
   const pickAndUploadImage = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -153,7 +157,29 @@ export default function ProfileScreen({ navigation }: any) {
     }
   };
 
-  // 4. Cerrar Sesión
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      Alert.alert('Contraseña muy corta', 'Debe tener al menos 6 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('No coinciden', 'Las contraseñas no coinciden.');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+
+      Alert.alert('¡Listo!', 'Contraseña actualizada.');
+      setIsPasswordModalVisible(false);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      Alert.alert('Error', error.message ?? 'No se pudo actualizar la contraseña.');
+    }
+  };
+
   const handleLogout = async () => {
     Alert.alert('Cerrar Sesión', '¿Estás seguro de que deseas salir?', [
       { text: 'Cancelar', style: 'cancel' },
@@ -179,7 +205,7 @@ export default function ProfileScreen({ navigation }: any) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {/* Encabezado Principal */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -196,7 +222,7 @@ export default function ProfileScreen({ navigation }: any) {
             )}
 
             <View style={[styles.activeBadge, { backgroundColor: '#4CAF50' }]} />
-            
+
             <View style={[styles.cameraBadge, { backgroundColor: colors.primary }]}>
               <Ionicons name="camera" size={12} color="#FFFFFF" />
             </View>
@@ -206,7 +232,7 @@ export default function ProfileScreen({ navigation }: any) {
           <Text style={[styles.userHandle, { color: colors.textSecondary }]}>@{username}</Text>
           <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{userEmail}</Text>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.tag, { backgroundColor: '#20629122' }]}
             onPress={() => setIsEditModalVisible(true)}
           >
@@ -216,13 +242,13 @@ export default function ProfileScreen({ navigation }: any) {
 
         {/* Sección 1: Información Académica */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Información Académica</Text>
-        
+
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <View style={styles.infoRow}>
             <Ionicons name="school-outline" size={22} color={colors.primary} />
             <View style={styles.infoTextContainer}>
               <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Universidad</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{university}</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{university || 'No especificada'}</Text>
             </View>
           </View>
 
@@ -232,7 +258,7 @@ export default function ProfileScreen({ navigation }: any) {
             <Ionicons name="book-outline" size={22} color={colors.primary} />
             <View style={styles.infoTextContainer}>
               <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Carrera</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{degree}</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{degree || 'No especificada'}</Text>
             </View>
           </View>
 
@@ -247,7 +273,7 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Bloques de Estadísticas Rápidas (Materias / Horas) */}
+        {/* Bloques de Estadísticas Rápidas */}
         <View style={styles.statsRow}>
           <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
             <Text style={[styles.statNumber, { color: colors.primary }]}>4</Text>
@@ -261,9 +287,9 @@ export default function ProfileScreen({ navigation }: any) {
 
         {/* Sección 2: Opciones de Cuenta */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Opciones de Cuenta</Text>
-        
+
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <TouchableOpacity style={styles.optionRow}>
+          <TouchableOpacity style={styles.optionRow} onPress={() => setIsPasswordModalVisible(true)}>
             <Ionicons name="lock-closed-outline" size={20} color={colors.text} />
             <Text style={[styles.optionText, { color: colors.text }]}>Cambiar contraseña</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
@@ -278,7 +304,7 @@ export default function ProfileScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* Botón de Cerrar Sesión Rojo */}
+        {/* Botón de Cerrar Sesión */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#ffffff" />
           <Text style={styles.logoutText}>Cerrar Sesión</Text>
@@ -286,7 +312,7 @@ export default function ProfileScreen({ navigation }: any) {
 
       </ScrollView>
 
-      {/* MODAL PARA EDITAR TODOS LOS DATOS */}
+      {/* MODAL: EDITAR PERFIL */}
       <Modal visible={isEditModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
@@ -352,6 +378,52 @@ export default function ProfileScreen({ navigation }: any) {
                 onPress={saveProfileData}
               >
                 <Text style={styles.modalBtnText}>Guardar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL: CAMBIAR CONTRASEÑA */}
+      <Modal visible={isPasswordModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Cambiar Contraseña</Text>
+
+            <TextInput
+              style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholder="Nueva contraseña"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry
+            />
+            <TextInput
+              style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Confirmar contraseña"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry
+            />
+
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: '#888' }]}
+                onPress={() => {
+                  setIsPasswordModalVisible(false);
+                  setNewPassword('');
+                  setConfirmPassword('');
+                }}
+              >
+                <Text style={styles.modalBtnText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: colors.primary }]}
+                onPress={handleChangePassword}
+              >
+                <Text style={styles.modalBtnText}>Actualizar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -425,8 +497,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logoutText: { color: '#ffffff', fontWeight: 'bold', fontSize: 16 },
-
-  /* Modal */
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -447,6 +517,7 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 14,
     width: '100%',
+    marginBottom: 12,
   },
   modalButtonsRow: {
     flexDirection: 'row',

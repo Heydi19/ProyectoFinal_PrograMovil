@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {View,Text,StyleSheet,TouchableOpacity,FlatList,TextInput,} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../Context/ThemeNavigator';
 
-// 2. DEFINICIÓN DE TIPOS (TYPESCRIPT)
 interface StudySession {
   id: string;
   subject: string;
@@ -12,21 +11,15 @@ interface StudySession {
 }
 
 export default function StudyTrackerScreen() {
-  // 3. CONTEXTO Y ESTADOS LOCALES
   const { colors } = useTheme();
 
-  // Estados del temporizador
   const [seconds, setSeconds] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [subject, setSubject] = useState('');
 
-  // Lista de sesiones de estudio guardadas
-  const [sessions, setSessions] = useState<StudySession[]>([
-    { id: '1', subject: 'Prog. Móvil', minutes: 45, date: 'Hoy' },
-    { id: '2', subject: 'Base de Datos', minutes: 30, date: 'Ayer' },
-  ]);
+  // Arreglo inicial vacío para nuevos usuarios
+  const [sessions, setSessions] = useState<StudySession[]>([]);
 
-  // 4. EFECTO PARA EL FUNCIONAMIENTO DEL CRONÓMETRO
   useEffect(() => {
     let interval: any = null;
     if (isActive) {
@@ -41,21 +34,18 @@ export default function StudyTrackerScreen() {
     };
   }, [isActive, seconds]);
 
-  // 5. FUNCIONES LÓGICAS
-  // Iniciar / Pausar el cronómetro
   const toggleTimer = () => {
     if (!subject.trim()) return;
     setIsActive(!isActive);
   };
 
-  // Guardar la sesión acumulada
   const saveSession = () => {
     if (seconds === 0 || !subject.trim()) return;
 
     const newSession: StudySession = {
       id: Date.now().toString(),
       subject: subject,
-      minutes: Math.max(1, Math.floor(seconds / 60)), // Mínimo 1 min para registro
+      minutes: Math.max(1, Math.floor(seconds / 60)),
       date: 'Hoy',
     };
 
@@ -65,17 +55,14 @@ export default function StudyTrackerScreen() {
     setSubject('');
   };
 
-  // Formatear segundos a 00:00
   const formatTime = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Cálculo de estadísticas: Total de minutos estudiados
   const totalMinutes = sessions.reduce((acc, curr) => acc + curr.minutes, 0);
 
-  // 6. INTERFAZ VISUAL (RENDER)
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       
@@ -134,30 +121,37 @@ export default function StudyTrackerScreen() {
       {/* Historial de Sesiones */}
       <Text style={[styles.subtitle, { color: colors.text }]}>Historial Reciente</Text>
       
-      <FlatList
-        data={sessions}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={[styles.sessionCard, { backgroundColor: colors.surface }]}>
-            <View>
-              <Text style={[styles.sessionSubject, { color: colors.text }]}>
-                {item.subject}
-              </Text>
-              <Text style={[styles.sessionDate, { color: colors.textSecondary }]}>
-                {item.date}
+      {sessions.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            Aún no has registrado sesiones de estudio.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={sessions}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={[styles.sessionCard, { backgroundColor: colors.surface }]}>
+              <View>
+                <Text style={[styles.sessionSubject, { color: colors.text }]}>
+                  {item.subject}
+                </Text>
+                <Text style={[styles.sessionDate, { color: colors.textSecondary }]}>
+                  {item.date}
+                </Text>
+              </View>
+              <Text style={[styles.sessionMinutes, { color: colors.text }]}>
+                ⏱️ {item.minutes} min
               </Text>
             </View>
-            <Text style={[styles.sessionMinutes, { color: colors.text }]}>
-              ⏱️ {item.minutes} min
-            </Text>
-          </View>
-        )}
-      />
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
-// 7. ESTILOS DE LA PANTALLA
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   header: { marginBottom: 16 },
@@ -203,4 +197,6 @@ const styles = StyleSheet.create({
   sessionSubject: { fontSize: 16, fontWeight: '600' },
   sessionDate: { fontSize: 12, marginTop: 2 },
   sessionMinutes: { fontSize: 14, fontWeight: 'bold' },
+  emptyContainer: { alignItems: 'center', marginTop: 20 },
+  emptyText: { fontSize: 14 },
 });

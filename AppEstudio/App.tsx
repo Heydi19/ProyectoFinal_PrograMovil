@@ -2,17 +2,22 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import StackNavigation from './src/Navegation/StackNavegation';
 import { ThemeProvider } from './src/Context/ThemeNavigator';
-import TabsNavigation from './src/Navegation/TabsNavegation';
-
+import { AuthProvider } from './src/Context/AuthContext';
+import { LanguageProvider } from './src/Context/LanguageContext';
+import { AppDataProvider } from './src/Context/AppDataContext';
 
 export default function App() {
   return (
-    // Encapsula toda la estructura de rutas mediante el NavigationContainer
-    <ThemeProvider>
-    <NavigationContainer>
-      <StackNavigation />
-    </NavigationContainer>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppDataProvider>
+            <NavigationContainer>
+              <StackNavigation />
+            </NavigationContainer>
+          </AppDataProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }
-

@@ -7,21 +7,29 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
 
-import { supabase } from '../../lib/supabase'; // Ajusta la ruta a tu cliente
+import { supabase } from '../../lib/supabase';
 import { useTheme } from '../../Context/ThemeNavigator';
+import { useLanguage } from '../../Context/LanguageContext';
 
 export default function SettingsScreen({ navigation }: any) {
   const { colors, isDark, toggleTheme } = useTheme();
+  const { locale, setLanguage, t } = useLanguage();
 
-  // Estados locales para opciones adicionales de configuración
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [examReminders, setExamReminders] = useState(true);
 
-  // Cerrar Sesión
+  // Estado del modal de cambiar contraseña
+  const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+
   const handleLogout = async () => {
     Alert.alert('Cerrar Sesión', '¿Estás seguro de que deseas salir?', [
       { text: 'Cancelar', style: 'cancel' },
@@ -36,13 +44,40 @@ export default function SettingsScreen({ navigation }: any) {
     ]);
   };
 
+  // Actualiza la contraseña en Supabase
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      Alert.alert(t('change_password_short_title'), t('change_password_short'));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert(t('change_password_mismatch_title'), t('change_password_mismatch'));
+      return;
+    }
+
+    try {
+      setSavingPassword(true);
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+
+      Alert.alert(t('change_password_success_title'), t('change_password_success'));
+      setIsPasswordModalVisible(false);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      Alert.alert('Error', error.message ?? t('change_password_generic_error'));
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {/* Encabezado */}
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Ajustes</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{t('settings')}</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
             Personaliza tu experiencia y gestiona tu cuenta
           </Text>
@@ -57,7 +92,7 @@ export default function SettingsScreen({ navigation }: any) {
                 <Ionicons name={isDark ? "moon" : "sunny"} size={20} color={colors.primary} />
               </View>
               <View>
-                <Text style={[styles.optionTitle, { color: colors.text }]}>Modo Oscuro</Text>
+                <Text style={[styles.optionTitle, { color: colors.text }]}>{t('dark_mode')}</Text>
                 <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>
                   {isDark ? 'Tema oscuro activo' : 'Tema claro activo'}
                 </Text>
@@ -69,6 +104,44 @@ export default function SettingsScreen({ navigation }: any) {
               trackColor={{ false: '#D1D1D6', true: colors.primary + '80' }}
               thumbColor={isDark ? colors.primary : '#FFFFFF'}
             />
+          </View>
+        </View>
+
+        {/* SECCIÓN NUEVA: IDIOMA */}
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Idioma / Language</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <View style={styles.optionRow}>
+            <View style={styles.optionLeft}>
+              <View style={[styles.iconContainer, { backgroundColor: colors.primary + '18' }]}>
+                <Ionicons name="language-outline" size={20} color={colors.primary} />
+              </View>
+              <Text style={[styles.optionTitle, { color: colors.text }]}>
+                {locale === 'es' ? 'Español' : 'English'}
+              </Text>
+            </View>
+
+            <View style={styles.languageToggle}>
+              <TouchableOpacity
+                style={[
+                  styles.languageButton,
+                  { borderColor: colors.border },
+                  locale === 'es' && { backgroundColor: colors.primary },
+                ]}
+                onPress={() => setLanguage('es')}
+              >
+                <Text style={[styles.languageButtonText, { color: locale === 'es' ? '#fff' : colors.text }]}>ES</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.languageButton,
+                  { borderColor: colors.border },
+                  locale === 'en' && { backgroundColor: colors.primary },
+                ]}
+                onPress={() => setLanguage('en')}
+              >
+                <Text style={[styles.languageButtonText, { color: locale === 'en' ? '#fff' : colors.text }]}>EN</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -121,15 +194,14 @@ export default function SettingsScreen({ navigation }: any) {
         {/* SECCIÓN 3: CUENTA Y SEGURIDAD */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Cuenta y Seguridad</Text>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.optionRow}
-            onPress={() => navigation.navigate('Perfil')}
+            onPress={() => navigation.navigate('profile')}
           >
             <View style={styles.optionLeft}>
               <View style={[styles.iconContainer, { backgroundColor: colors.primary + '18' }]}>
                 <Ionicons name="person-outline" size={20} color={colors.primary} />
               </View>
-
               <Text style={[styles.optionTitle, { color: colors.text }]}>Editar Perfil</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
@@ -137,7 +209,10 @@ export default function SettingsScreen({ navigation }: any) {
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          <TouchableOpacity style={styles.optionRow}>
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() => setIsPasswordModalVisible(true)}
+          >
             <View style={styles.optionLeft}>
               <View style={[styles.iconContainer, { backgroundColor: colors.primary + '18' }]}>
                 <Ionicons name="key-outline" size={20} color={colors.primary} />
@@ -179,41 +254,68 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Botón de Cerrar Sesión */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.logoutText}>Cerrar Sesión</Text>
+          <Text style={styles.logoutText}>{t('logout')}</Text>
         </TouchableOpacity>
 
       </ScrollView>
+
+      {/* MODAL: CAMBIAR CONTRASEÑA */}
+      <Modal visible={isPasswordModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Cambiar Contraseña</Text>
+
+            <TextInput
+              style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholder="Nueva contraseña"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry
+            />
+            <TextInput
+              style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Confirmar contraseña"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry
+            />
+
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: '#888' }]}
+                onPress={() => {
+                  setIsPasswordModalVisible(false);
+                  setNewPassword('');
+                  setConfirmPassword('');
+                }}
+              >
+                <Text style={styles.modalBtnText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: colors.primary }]}
+                onPress={handleChangePassword}
+                disabled={savingPassword}
+              >
+                <Text style={styles.modalBtnText}>{savingPassword ? 'Guardando...' : 'Actualizar'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  header: {
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    marginTop: 4,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
+  container: { flex: 1 },
+  scrollContent: { padding: 16, paddingBottom: 32 },
+  header: { marginTop: 8, marginBottom: 20 },
+  headerTitle: { fontSize: 26, fontWeight: 'bold' },
+  headerSubtitle: { fontSize: 13, marginTop: 4 },
+  sectionTitle: { fontSize: 15, fontWeight: '600', marginTop: 16, marginBottom: 8, marginLeft: 4 },
   card: {
     borderRadius: 14,
     paddingHorizontal: 14,
@@ -224,37 +326,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 3,
   },
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  optionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  optionTitle: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  optionSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  divider: {
-    height: 1,
-    marginVertical: 4,
-  },
+  optionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
+  optionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  iconContainer: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  optionTitle: { fontSize: 15, fontWeight: '500' },
+  optionSubtitle: { fontSize: 12, marginTop: 2 },
+  divider: { height: 1, marginVertical: 4 },
+  languageToggle: { flexDirection: 'row', gap: 6 },
+  languageButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
+  languageButtonText: { fontSize: 13, fontWeight: '600' },
   logoutButton: {
     backgroundColor: '#d32f2f',
     flexDirection: 'row',
@@ -265,9 +345,12 @@ const styles = StyleSheet.create({
     marginTop: 28,
     gap: 8,
   },
-  logoutText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  logoutText: { color: '#ffffff', fontWeight: 'bold', fontSize: 16 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+  modalContent: { borderRadius: 16, padding: 20, alignItems: 'center' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 14 },
+  modalInput: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, width: '100%', marginBottom: 12 },
+  modalButtonsRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 8, gap: 10 },
+  modalBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
+  modalBtnText: { color: '#FFF', fontWeight: 'bold' },
 });

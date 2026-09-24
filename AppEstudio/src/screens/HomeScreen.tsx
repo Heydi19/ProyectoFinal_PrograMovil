@@ -6,6 +6,7 @@ import { RootStackParamList } from "../Navegation/StackNavegation";
 import { useTheme } from "../Context/ThemeNavigator";
 
 
+
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, "HomeScreen">;
 
 // Usamos any o tipado opcional para permitir que funcione tanto en Stack como en Tabs
@@ -16,6 +17,7 @@ export default function Home({ route }: any ) {
 
     // Usamos encadenamiento opcional (?.) por si no se recibe el parámetro email
     const {email} = route.params ?? { email: "Usuario" }; // Valor por defecto si no se recibe email
+  
 
     return (
         //se aplican colores dinamicos en los estilos en linea combinados
