@@ -6,9 +6,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   Modal,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
 import { useTheme } from '../../Context/ThemeNavigator';
 import { useLanguage } from '../../Context/LanguageContext';
@@ -83,6 +84,17 @@ export default function TasksScreen() {
 
     setIsEditModalVisible(false);
     setEditingTaskId(null);
+  };
+
+  const handleDeleteTask = (id: string) => {
+    Alert.alert('Eliminar tarea', '¿Seguro que quieres eliminar esta tarea?', [
+      { text: t('tasks_cancel'), style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: () => setTasks((prev) => prev.filter((task) => task.id !== id)),
+      },
+    ]);
   };
 
   const toggleTaskComplete = (id: string) => {
@@ -206,6 +218,13 @@ export default function TasksScreen() {
                         style={styles.iconButton}
                       >
                         <Ionicons name="create-outline" size={20} color={colors.primary} />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => handleDeleteTask(item.id)}
+                        style={styles.iconButton}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#E53935" />
                       </TouchableOpacity>
 
                       <TouchableOpacity

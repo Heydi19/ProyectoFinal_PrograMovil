@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  TextInput,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../Context/ThemeNavigator';
 import { useLanguage } from '../../Context/LanguageContext';
 
@@ -23,22 +32,23 @@ export default function StudyTrackerScreen() {
   const [sessions, setSessions] = useState<StudySession[]>([]);
 
   useEffect(() => {
-    let interval: any = null;
-    if (isActive) {
-      interval = setInterval(() => {
-        setSeconds((prev) => prev + 1);
-      }, 1000);
-    } else if (!isActive && seconds !== 0 && interval) {
-      clearInterval(interval);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isActive, seconds]);
+    if (!isActive) return;
 
-  const toggleTimer = () => {
-    if (!subject.trim()) return;
-    setIsActive(!isActive);
+    const interval = setInterval(() => {
+      setSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isActive]);
+
+  const startTimer = () => {
+    if (!subject.trim() || isActive) return;
+    setIsActive(true);
+  };
+
+  const pauseTimer = () => {
+    if (!isActive) return;
+    setIsActive(false);
   };
 
   const saveSession = () => {
@@ -46,7 +56,7 @@ export default function StudyTrackerScreen() {
 
     const newSession: StudySession = {
       id: Date.now().toString(),
-      subject: subject,
+      subject: subject.trim(),
       minutes: Math.max(1, Math.floor(seconds / 60)),
       date: 'Hoy', // valor interno, no se traduce (lo usa HomeScreen para calcular el total de hoy)
     };
@@ -55,6 +65,17 @@ export default function StudyTrackerScreen() {
     setSeconds(0);
     setIsActive(false);
     setSubject('');
+  };
+
+  const handleDeleteSession = (id: string) => {
+    Alert.alert('Eliminar sesión', '¿Seguro que quieres eliminar esta sesión del historial?', [
+      { text: t('tasks_cancel'), style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: () => setSessions((prev) => prev.filter((s) => s.id !== id)),
+      },
+    ]);
   };
 
   const formatTime = (totalSeconds: number) => {
@@ -99,21 +120,41 @@ export default function StudyTrackerScreen() {
         </Text>
 
         <View style={styles.buttonRow}>
+          {/* Iniciar */}
           <TouchableOpacity
             style={[
               styles.timerButton,
-              { backgroundColor: isActive ? '#d32f2f' : '#206291' },
+              { backgroundColor: '#206291' },
+              (isActive || !subject.trim()) && styles.buttonDisabled,
             ]}
-            onPress={toggleTimer}
+            onPress={startTimer}
+            disabled={isActive || !subject.trim()}
           >
-            <Text style={styles.buttonText}>
-              {isActive ? t('tracker_pause') : t('tracker_start')}
-            </Text>
+            <Text style={styles.buttonText}>{t('tracker_start')}</Text>
           </TouchableOpacity>
 
+          {/* Pausar */}
           <TouchableOpacity
-            style={[styles.timerButton, { backgroundColor: '#388e3c' }]}
+            style={[
+              styles.timerButton,
+              { backgroundColor: '#f57c00' },
+              !isActive && styles.buttonDisabled,
+            ]}
+            onPress={pauseTimer}
+            disabled={!isActive}
+          >
+            <Text style={styles.buttonText}>{t('tracker_pause')}</Text>
+          </TouchableOpacity>
+
+          {/* Guardar */}
+          <TouchableOpacity
+            style={[
+              styles.timerButton,
+              { backgroundColor: '#388e3c' },
+              seconds === 0 && styles.buttonDisabled,
+            ]}
             onPress={saveSession}
+            disabled={seconds === 0}
           >
             <Text style={styles.buttonText}>{t('tracker_save')}</Text>
           </TouchableOpacity>
@@ -135,7 +176,7 @@ export default function StudyTrackerScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={[styles.sessionCard, { backgroundColor: colors.surface }]}>
-              <View>
+              <View style={styles.sessionInfo}>
                 <Text style={[styles.sessionSubject, { color: colors.text }]}>
                   {item.subject}
                 </Text>
@@ -143,9 +184,17 @@ export default function StudyTrackerScreen() {
                   {item.date}
                 </Text>
               </View>
+
               <Text style={[styles.sessionMinutes, { color: colors.text }]}>
                 ⏱️ {item.minutes} min
               </Text>
+
+              <TouchableOpacity
+                onPress={() => handleDeleteSession(item.id)}
+                style={styles.deleteButton}
+              >
+                <Ionicons name="trash-outline" size={20} color="#E53935" />
+              </TouchableOpacity>
             </View>
           )}
         />
@@ -181,24 +230,26 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   timerText: { fontSize: 42, fontWeight: 'bold', marginVertical: 10 },
-  buttonRow: { flexDirection: 'row', gap: 10 },
+  buttonRow: { flexDirection: 'row', gap: 8 },
   timerButton: {
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
     borderRadius: 8,
   },
+  buttonDisabled: { opacity: 0.4 },
   buttonText: { color: '#ffffff', fontWeight: 'bold' },
   sessionCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     padding: 14,
     borderRadius: 8,
     marginBottom: 8,
   },
+  sessionInfo: { flex: 1 },
   sessionSubject: { fontSize: 16, fontWeight: '600' },
   sessionDate: { fontSize: 12, marginTop: 2 },
-  sessionMinutes: { fontSize: 14, fontWeight: 'bold' },
+  sessionMinutes: { fontSize: 14, fontWeight: 'bold', marginHorizontal: 10 },
+  deleteButton: { padding: 4 },
   emptyContainer: { alignItems: 'center', marginTop: 20 },
   emptyText: { fontSize: 14 },
 });

@@ -6,8 +6,11 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../Context/ThemeNavigator';
 import { useLanguage } from '../../Context/LanguageContext';
 
@@ -25,20 +28,29 @@ export default function ExamsScreen() {
 
   const [exams, setExams] = useState<Exam[]>([]);
 
+  // Formulario para agregar
   const [subject, setSubject] = useState('');
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+
+  // Modal de edición
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editingExamId, setEditingExamId] = useState<string | null>(null);
+  const [editSubject, setEditSubject] = useState('');
+  const [editTitle, setEditTitle] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editTime, setEditTime] = useState('');
 
   const handleAddExam = () => {
     if (!subject.trim() || !title.trim() || !date.trim()) return;
 
     const newExam: Exam = {
       id: Date.now().toString(),
-      subject,
-      title,
-      date,
-      time: time.trim() ? time : '10:00',
+      subject: subject.trim(),
+      title: title.trim(),
+      date: date.trim(),
+      time: time.trim() ? time.trim() : '10:00',
     };
 
     setExams([...exams, newExam]);
@@ -47,6 +59,47 @@ export default function ExamsScreen() {
     setTitle('');
     setDate('');
     setTime('');
+  };
+
+  const handleOpenEditModal = (exam: Exam) => {
+    setEditingExamId(exam.id);
+    setEditSubject(exam.subject);
+    setEditTitle(exam.title);
+    setEditDate(exam.date);
+    setEditTime(exam.time);
+    setIsEditModalVisible(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editSubject.trim() || !editTitle.trim() || !editDate.trim()) return;
+
+    setExams((prev) =>
+      prev.map((exam) =>
+        exam.id === editingExamId
+          ? {
+              ...exam,
+              subject: editSubject.trim(),
+              title: editTitle.trim(),
+              date: editDate.trim(),
+              time: editTime.trim() ? editTime.trim() : '10:00',
+            }
+          : exam
+      )
+    );
+
+    setIsEditModalVisible(false);
+    setEditingExamId(null);
+  };
+
+  const handleDeleteExam = (id: string) => {
+    Alert.alert('Eliminar examen', '¿Seguro que quieres eliminar este examen?', [
+      { text: t('tasks_cancel'), style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: () => setExams((prev) => prev.filter((exam) => exam.id !== id)),
+      },
+    ]);
   };
 
   return (
@@ -116,14 +169,86 @@ export default function ExamsScreen() {
                 <Text style={styles.examBadgeText}>📅 {item.date}</Text>
                 <Text style={styles.examTimeText}>⏰ {item.time}</Text>
               </View>
+
               <View style={styles.examInfo}>
                 <Text style={[styles.examSubject, { color: colors.text }]}>{item.subject}</Text>
                 <Text style={[styles.examTitle, { color: colors.textSecondary }]}>{item.title}</Text>
+              </View>
+
+              <View style={styles.actionButtons}>
+                <TouchableOpacity onPress={() => handleOpenEditModal(item)} style={styles.iconButton}>
+                  <Ionicons name="create-outline" size={20} color={colors.primary} />
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => handleDeleteExam(item.id)} style={styles.iconButton}>
+                  <Ionicons name="trash-outline" size={20} color="#E53935" />
+                </TouchableOpacity>
               </View>
             </View>
           )}
         />
       )}
+
+      {/* MODAL DE EDICIÓN */}
+      <Modal
+        visible={isEditModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Editar examen</Text>
+
+            <TextInput
+              style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+              placeholder={t('exams_subject_placeholder')}
+              placeholderTextColor={colors.textSecondary}
+              value={editSubject}
+              onChangeText={setEditSubject}
+            />
+            <TextInput
+              style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+              placeholder={t('exams_description_placeholder')}
+              placeholderTextColor={colors.textSecondary}
+              value={editTitle}
+              onChangeText={setEditTitle}
+            />
+            <View style={styles.rowInputs}>
+              <TextInput
+                style={[styles.input, styles.halfInput, { color: colors.text, borderColor: colors.border }]}
+                placeholder={t('exams_date_placeholder')}
+                placeholderTextColor={colors.textSecondary}
+                value={editDate}
+                onChangeText={setEditDate}
+              />
+              <TextInput
+                style={[styles.input, styles.halfInput, { color: colors.text, borderColor: colors.border }]}
+                placeholder={t('exams_time_placeholder')}
+                placeholderTextColor={colors.textSecondary}
+                value={editTime}
+                onChangeText={setEditTime}
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setIsEditModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>{t('tasks_cancel')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={handleSaveEdit}
+              >
+                <Text style={styles.saveButtonText}>{t('tasks_save')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -170,6 +295,23 @@ const styles = StyleSheet.create({
   examInfo: { flex: 1 },
   examSubject: { fontSize: 16, fontWeight: 'bold' },
   examTitle: { fontSize: 13, marginTop: 2 },
+  actionButtons: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 },
+  iconButton: { padding: 4 },
   emptyContainer: { alignItems: 'center', marginTop: 20 },
   emptyText: { fontSize: 14 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: { width: '100%', borderRadius: 16, padding: 20, elevation: 5 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 12 },
+  modalButton: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 8 },
+  cancelButton: { backgroundColor: '#E0E0E0' },
+  cancelButtonText: { color: '#333333', fontWeight: '600' },
+  saveButton: { backgroundColor: '#206291' },
+  saveButtonText: { color: '#FFFFFF', fontWeight: '600' },
 });
