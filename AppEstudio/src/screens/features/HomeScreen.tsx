@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,16 +9,18 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
 import { useTheme } from '../../Context/ThemeNavigator';
+import { useAuth } from '../../Context/AuthContext';
+import { useLanguage } from '../../Context/LanguageContext';
 
 export default function HomeScreen({ navigation }: any) {
   const { colors, isDark } = useTheme();
+  const { user } = useAuth();
+  const { t } = useLanguage();
 
-  // Datos dinámicos/resumen
-  const stats = {
-    activeTasks: 3,
-    studyHoursToday: '2.5 h',
-    nextExams: 1,
-  };
+  const [activeTasks, setActiveTasks] = useState(0);
+  const [studyHoursToday, setStudyHoursToday] = useState('0 h');
+  const [nextExams, setNextExams] = useState(0);
+  const [progressPercentage, setProgressPercentage] = useState(0);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -29,10 +32,10 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.headerRow}>
           <View>
             <Text style={[styles.greetingLabel, { color: colors.textSecondary }]}>
-              ¡Hola de nuevo! 👋
+              {t('welcome')} 👋
             </Text>
             <Text style={[styles.userName, { color: colors.text }]}>
-              Heydi Reyes
+              {user?.fullName || user?.email || 'Estudiante'}
             </Text>
           </View>
 
@@ -41,7 +44,7 @@ export default function HomeScreen({ navigation }: any) {
               styles.avatarButton,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
-            onPress={() => navigation.navigate('profile')} // ✅ Cambiado de 'Perfil' a 'profile'
+            onPress={() => navigation.navigate('profile')}
             activeOpacity={0.7}
           >
             <Ionicons name="person-circle" size={44} color={colors.primary} />
@@ -53,41 +56,43 @@ export default function HomeScreen({ navigation }: any) {
           <View style={styles.bannerHeader}>
             <View style={styles.bannerTag}>
               <Ionicons name="sparkles" size={14} color="#FFE082" />
-              <Text style={styles.bannerTagText}>Resumen del Día</Text>
+              <Text style={styles.bannerTagText}>{t('home_banner_tag')}</Text>
             </View>
             <Ionicons name="calendar-outline" size={22} color="#FFFFFF" />
           </View>
 
-          <Text style={styles.bannerTitle}>Plan de hoy</Text>
+          <Text style={styles.bannerTitle}>{t('home_banner_title')}</Text>
           <Text style={styles.bannerSubtitle}>
-            Tienes {stats.activeTasks} tareas pendientes y {stats.nextExams} examen esta semana. ¡Sigue así!
+            {activeTasks === 0 && nextExams === 0
+              ? t('home_banner_subtitle_empty')
+              : t('home_banner_subtitle', { tasks: activeTasks, exams: nextExams })}
           </Text>
 
-          {/* Barra de progreso visual */}
           <View style={styles.progressContainer}>
             <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '65%' }]} />
+              <View style={[styles.progressBarFill, { width: `${progressPercentage}%` }]} />
             </View>
-            <Text style={styles.progressText}>65% completado</Text>
+            <Text style={styles.progressText}>
+              {t('home_progress_completed', { percent: progressPercentage })}
+            </Text>
           </View>
 
           <TouchableOpacity
             style={styles.bannerButton}
-            onPress={() => navigation.navigate('tasks')} // ✅ Cambiado de 'Tareas' a 'tasks'
+            onPress={() => navigation.navigate('tasks')}
             activeOpacity={0.8}
           >
-            <Text style={styles.bannerButtonText}>Ver Pendientes</Text>
+            <Text style={styles.bannerButtonText}>{t('home_view_pending')}</Text>
             <Ionicons name="arrow-forward" size={16} color="#1d6395" />
           </TouchableOpacity>
         </View>
 
         {/* SECCIÓN 1: RESUMEN ACADÉMICO */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Resumen Académico
+          {t('home_academic_summary')}
         </Text>
 
         <View style={styles.statsGrid}>
-          {/* Tarjeta Tareas */}
           <TouchableOpacity
             style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => navigation.navigate('tasks')}
@@ -97,14 +102,13 @@ export default function HomeScreen({ navigation }: any) {
               <Ionicons name="checkbox-outline" size={22} color="#2196F3" />
             </View>
             <Text style={[styles.statNumber, { color: colors.text }]}>
-              {stats.activeTasks}
+              {activeTasks}
             </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Tareas activas
+              {t('home_active_tasks_label')}
             </Text>
           </TouchableOpacity>
 
-          {/* Tarjeta Horas de Estudio */}
           <TouchableOpacity
             style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => navigation.navigate('tracker')}
@@ -114,14 +118,13 @@ export default function HomeScreen({ navigation }: any) {
               <Ionicons name="time-outline" size={22} color="#4CAF50" />
             </View>
             <Text style={[styles.statNumber, { color: colors.text }]}>
-              {stats.studyHoursToday}
+              {studyHoursToday}
             </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Estudio hoy
+              {t('home_study_today_label')}
             </Text>
           </TouchableOpacity>
 
-          {/* Tarjeta Exámenes */}
           <TouchableOpacity
             style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => navigation.navigate('exams')}
@@ -131,24 +134,23 @@ export default function HomeScreen({ navigation }: any) {
               <Ionicons name="calendar-outline" size={22} color="#E53935" />
             </View>
             <Text style={[styles.statNumber, { color: colors.text }]}>
-              {stats.nextExams}
+              {nextExams}
             </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Examen próximo
+              {t('home_next_exam_label')}
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* SECCIÓN 2: ACCESO RÁPIDO */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Acceso Rápido
+          {t('home_quick_access')}
         </Text>
 
         <View style={styles.quickAccessGroup}>
-          {/* Iniciar Cronómetro */}
           <TouchableOpacity
             style={[styles.quickAccessCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            onPress={() => navigation.navigate('tracker')} // ✅ Cambiado de 'Horas' a 'tracker'
+            onPress={() => navigation.navigate('tracker')}
             activeOpacity={0.7}
           >
             <View style={styles.quickAccessLeft}>
@@ -157,20 +159,19 @@ export default function HomeScreen({ navigation }: any) {
               </View>
               <View>
                 <Text style={[styles.quickAccessTitle, { color: colors.text }]}>
-                  Iniciar Cronómetro
+                  {t('home_start_timer')}
                 </Text>
                 <Text style={[styles.quickAccessSubtitle, { color: colors.textSecondary }]}>
-                  Registra tu tiempo de estudio
+                  {t('home_start_timer_subtitle')}
                 </Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          {/* Nueva Tarea */}
           <TouchableOpacity
             style={[styles.quickAccessCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            onPress={() => navigation.navigate('tasks')} // ✅ Cambiado de 'Tareas' a 'tasks'
+            onPress={() => navigation.navigate('tasks')}
             activeOpacity={0.7}
           >
             <View style={styles.quickAccessLeft}>
@@ -179,20 +180,19 @@ export default function HomeScreen({ navigation }: any) {
               </View>
               <View>
                 <Text style={[styles.quickAccessTitle, { color: colors.text }]}>
-                  Nueva Tarea
+                  {t('home_new_task')}
                 </Text>
                 <Text style={[styles.quickAccessSubtitle, { color: colors.textSecondary }]}>
-                  Agrega entregas por materia
+                  {t('home_new_task_subtitle')}
                 </Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          {/* Ver Calendario de Exámenes */}
           <TouchableOpacity
             style={[styles.quickAccessCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            onPress={() => navigation.navigate('exams')} // ✅ Cambiado de 'Exámenes' a 'exams'
+            onPress={() => navigation.navigate('exams')}
             activeOpacity={0.7}
           >
             <View style={styles.quickAccessLeft}>
@@ -201,10 +201,10 @@ export default function HomeScreen({ navigation }: any) {
               </View>
               <View>
                 <Text style={[styles.quickAccessTitle, { color: colors.text }]}>
-                  Ver Exámenes
+                  {t('home_view_exams')}
                 </Text>
                 <Text style={[styles.quickAccessSubtitle, { color: colors.textSecondary }]}>
-                  Revisa fechas y evaluaciones
+                  {t('home_view_exams_subtitle')}
                 </Text>
               </View>
             </View>
@@ -212,7 +212,7 @@ export default function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* BLOQUE MOTIVACIONAL DEL DÍA */}
+        {/* FRASE MOTIVACIONAL DEL DÍA */}
         <View
           style={[
             styles.quoteCard,
@@ -221,7 +221,7 @@ export default function HomeScreen({ navigation }: any) {
         >
           <Ionicons name="bulb-outline" size={22} color={colors.primary} />
           <Text style={[styles.quoteText, { color: colors.text }]}>
-            "El éxito es la suma de pequeños esfuerzos repetidos día tras día."
+            "{t('home_quote')}"
           </Text>
         </View>
 
@@ -231,13 +231,8 @@ export default function HomeScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
+  container: { flex: 1 },
+  scrollContent: { padding: 16, paddingBottom: 32 },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -245,21 +240,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 18,
   },
-  greetingLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  avatarButton: {
-    borderRadius: 24,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-
-  // Banner "Plan de hoy"
+  greetingLabel: { fontSize: 14, fontWeight: '500' },
+  userName: { fontSize: 24, fontWeight: 'bold' },
+  avatarButton: { borderRadius: 24, borderWidth: 1, overflow: 'hidden' },
   bannerCard: {
     borderRadius: 18,
     padding: 18,
@@ -285,26 +268,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 4,
   },
-  bannerTagText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  bannerTitle: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  bannerSubtitle: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  progressContainer: {
-    marginBottom: 16,
-  },
+  bannerTagText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  bannerTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: 'bold', marginBottom: 4 },
+  bannerSubtitle: { color: 'rgba(255, 255, 255, 0.9)', fontSize: 13, lineHeight: 18, marginBottom: 14 },
+  progressContainer: { marginBottom: 16 },
   progressBarBg: {
     height: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
@@ -312,17 +279,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 4,
   },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#FFE082',
-    borderRadius: 3,
-  },
-  progressText: {
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: 11,
-    fontWeight: '500',
-    textAlign: 'right',
-  },
+  progressBarFill: { height: '100%', backgroundColor: '#FFE082', borderRadius: 3 },
+  progressText: { color: 'rgba(255, 255, 255, 0.85)', fontSize: 11, fontWeight: '500', textAlign: 'right' },
   bannerButton: {
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
@@ -332,25 +290,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 6,
   },
-  bannerButtonText: {
-    color: '#1d6395',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-
-  // Titulos de Secciones
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-
-  // Cuadrícula de Resumen Académico
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 24,
-  },
+  bannerButtonText: { color: '#1d6395', fontWeight: 'bold', fontSize: 14 },
+  sectionTitle: { fontSize: 17, fontWeight: '700', marginBottom: 12 },
+  statsGrid: { flexDirection: 'row', gap: 10, marginBottom: 24 },
   statCard: {
     flex: 1,
     borderRadius: 14,
@@ -371,22 +313,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginTop: 2,
-    textAlign: 'center',
-  },
-
-  // Accesos Rápidos
-  quickAccessGroup: {
-    gap: 10,
-    marginBottom: 24,
-  },
+  statNumber: { fontSize: 18, fontWeight: 'bold' },
+  statLabel: { fontSize: 11, fontWeight: '500', marginTop: 2, textAlign: 'center' },
+  quickAccessGroup: { gap: 10, marginBottom: 24 },
   quickAccessCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -400,11 +329,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
-  quickAccessLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
+  quickAccessLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   quickIconBg: {
     width: 40,
     height: 40,
@@ -412,16 +337,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  quickAccessTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  quickAccessSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  // Frase Motivacional
+  quickAccessTitle: { fontSize: 15, fontWeight: '600' },
+  quickAccessSubtitle: { fontSize: 12, marginTop: 2 },
   quoteCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -430,10 +347,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 10,
   },
-  quoteText: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    flex: 1,
-    lineHeight: 16,
-  },
+  quoteText: { fontSize: 12, fontStyle: 'italic', flex: 1, lineHeight: 16 },
 });

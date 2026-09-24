@@ -5,187 +5,140 @@ import { StatusBar } from 'expo-status-bar';
 import CustomInput from '../Components/CustomInput';
 import CustomButton from '../Components/CustomButton';
 import { useAuth } from '../Context/AuthContext';
-
-
-
-
-
+import { useLanguage } from '../Context/LanguageContext';
 
 export default function Register({ navigation }: any) {
-  // Manejo de estado para los inputs obligatorios solicitados
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const {register} = useAuth();
+  const [career, setCareer] = useState('');
+  const [phone, setPhone] = useState('');
+  const { register } = useAuth();
+  const { t } = useLanguage();
 
-  // Validar campos obligatorios, formato de email, teléfono y contraseña
   const validateForm = () => {
-    // Campos obligatorios
-    if (!fullName.trim() || !email.trim() || !phone.trim() || !password.trim()) {
-      Alert.alert('Campos incompletos', 'Por favor llena todos los campos obligatorios.');
+    if (!fullName.trim() || !email.trim() || !password.trim() || !career.trim()) {
+      Alert.alert(t('register_incomplete_title'), t('register_incomplete_message'));
       return false;
     }
 
-    // Email válido (Expresión regular)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      Alert.alert('Email inválido', 'Por favor ingresa un formato de correo electrónico válido.');
+      Alert.alert(t('register_invalid_email_title'), t('register_invalid_email_message'));
       return false;
     }
 
-    // Input de teléfono (Mínimo 8 dígitos)
-    const phoneRegex = /^[0-9]{8,15}$/;
-    if (!phoneRegex.test(phone.trim())) {
-      Alert.alert('Teléfono inválido', 'El número de teléfono debe contener entre 8 y 15 dígitos numéricos.');
+    // Solo se permite registro con correo institucional (.edu, .edu.hn, etc.)
+    if (!email.trim().toLowerCase().includes('.edu')) {
+      Alert.alert(t('register_edu_email_title'), t('register_edu_email_message'));
       return false;
     }
 
-    // Input tipo contraseña (Mínimo 6 caracteres)
     if (password.length < 6) {
-      Alert.alert('Contraseña débil', 'La contraseña debe tener al menos 6 caracteres.');
+      Alert.alert(t('register_weak_password_title'), t('register_weak_password_message'));
+      return false;
+    }
+
+    // Teléfono es opcional: solo se valida el formato SI se llenó
+    if (phone.trim() && !/^[0-9]{8,15}$/.test(phone.trim())) {
+      Alert.alert(t('register_invalid_phone_title'), t('register_invalid_phone_message'));
       return false;
     }
 
     return true;
   };
 
-  // Acción del botón Registrarse
   const handleRegister = async () => {
+    if (!validateForm()) return;
 
-    try{
-      await register(email,password);
-      navigation.navigate("LoginScreen");
-    } catch (error:any){
-      console.log("error al registrarse: ", error.messeage);
-
+    try {
+      await register(email.trim(), password, {
+        fullName: fullName.trim(),
+        career: career.trim(),
+        phone: phone.trim() || undefined,
+      });
+      Alert.alert(t('register_success_title'), t('register_success_message'), [
+        { text: t('register_continue'), onPress: () => navigation.navigate('LoginScreen') },
+      ]);
+    } catch (error: any) {
+      console.log('Error al registrarse:', error.message);
+      Alert.alert(t('register_error_title'), error.message ?? t('register_error_default'));
     }
-    //if (validateForm()) {
-      //Alert.alert('¡Registro Exitoso!', 'Tu cuenta ha sido creada correctamente.', [
-       // {
-        //  text: 'Continuar',
-          // Redirección de pantalla según el Stack Navigation
-       //   onPress: () => navigation.navigate('LoginScreen'),
-       // },
-     // ]);
-    
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        
-        {/* Encabezado visual */}
+
         <View style={styles.headerContainer}>
-          <Text style={styles.title}>Crear Cuenta</Text>
-          <Text style={styles.subtitle}>Completa tus datos para empezar</Text>
+          <Text style={styles.title}>{t('register_title')}</Text>
+          <Text style={styles.subtitle}>{t('register_subtitle')}</Text>
         </View>
 
-        {/* Formulario usando flexbox */}
         <View style={styles.formContainer}>
-          
-          {/* Input de tipo Texto (Nombre) */}
           <CustomInput
-            placeholder="Nombre completo"
+            placeholder={t('register_fullname_placeholder')}
             value={fullName}
             onChangeText={setFullName}
-            type="user" 
+            type="user"
           />
 
-          {/* Input de tipo Email */}
           <CustomInput
-            placeholder="Correo electrónico"
+            placeholder={t('register_email_placeholder')}
             value={email}
             onChangeText={setEmail}
             type="email"
           />
 
-          {/* Input de tipo Teléfono */}
           <CustomInput
-            placeholder="Número de teléfono"
-            value={phone}
-            onChangeText={setPhone}
-            type="number"
-          />
-
-          {/* Input de tipo Contraseña */}
-          <CustomInput
-            placeholder="Contraseña"
+            placeholder={t('register_password_placeholder')}
             value={password}
             onChangeText={setPassword}
             type="password"
           />
 
-          {/* Botón reutilizable con estilo condicional */}
+          <CustomInput
+            placeholder={t('register_career_placeholder')}
+            value={career}
+            onChangeText={setCareer}
+            type="user"
+          />
+
+          <CustomInput
+            placeholder={t('register_phone_placeholder')}
+            value={phone}
+            onChangeText={setPhone}
+            type="number"
+            required= {false}
+          />
+
           <View style={styles.buttonSpacing}>
-            <CustomButton title="Registrarse" onPress={handleRegister} variant="primary" />
+            <CustomButton title={t('register_button')} onPress={handleRegister} variant="primary" />
           </View>
 
-          {/* Enlace de navegación para volver a Login */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.linkContainer}
             onPress={() => navigation.navigate('LoginScreen')}
           >
-            <Text style={styles.toggleText}>¿Ya tienes cuenta? </Text>
-            <Text style={styles.toggleTextBold}>Inicia sesión aquí</Text>
+            <Text style={styles.toggleText}>{t('register_have_account')}</Text>
+            <Text style={styles.toggleTextBold}>{t('register_login_link')}</Text>
           </TouchableOpacity>
-
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// Estilización con Flexbox 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 25,
-    paddingVertical: 20,
-  },
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: 25,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#206291',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  formContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  buttonSpacing: {
-    marginTop: 20,
-    width: '100%',
-    alignItems: 'center',
-  },
-  linkContainer: {
-    flexDirection: 'row', // Uso claro de flexDirection para alinear el texto
-    marginTop: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  toggleText: {
-    color: '#555555',
-    fontSize: 14,
-  },
-  toggleTextBold: {
-    color: '#206291',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
-  },
+  container: { flex: 1, backgroundColor: '#ffffff' },
+  scrollContainer: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 25, paddingVertical: 20 },
+  headerContainer: { alignItems: 'center', marginBottom: 25 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#206291', marginBottom: 5 },
+  subtitle: { fontSize: 14, color: '#666666' },
+  formContainer: { width: '100%', alignItems: 'center' },
+  buttonSpacing: { marginTop: 20, width: '100%', alignItems: 'center' },
+  linkContainer: { flexDirection: 'row', marginTop: 20, alignItems: 'center', justifyContent: 'center' },
+  toggleText: { color: '#555555', fontSize: 14 },
+  toggleTextBold: { color: '#206291', fontSize: 14, fontWeight: 'bold', textDecorationLine: 'underline' },
 });

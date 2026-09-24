@@ -10,7 +10,8 @@ import {
   Modal,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
-import { useTheme } from '../../Context/ThemeNavigator'; // Ajusta la ruta según tu estructura
+import { useTheme } from '../../Context/ThemeNavigator';
+import { useLanguage } from '../../Context/LanguageContext';
 
 interface Task {
   id: string;
@@ -20,8 +21,9 @@ interface Task {
   completed: boolean;
 }
 
-export default function TareasScreen() {
+export default function TasksScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
 
   // Estados del formulario para nueva tarea
   const [taskTitle, setTaskTitle] = useState('');
@@ -35,32 +37,9 @@ export default function TareasScreen() {
   const [editSubject, setEditSubject] = useState('');
   const [editProfessor, setEditProfessor] = useState('');
 
-  // Lista de tareas inicial
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: 'Avance de Proyecto Móvil',
-      subject: 'Programación Móvil',
-      professor: 'Ing. Carlos Mendoza',
-      completed: false,
-    },
-    {
-      id: '2',
-      title: 'Entrega proyecto Final Programación',
-      subject: 'Programación Móvil',
-      professor: 'Ing. Carlos Mendoza',
-      completed: false,
-    },
-    {
-      id: '3',
-      title: 'Ejercicios de Base de Datos',
-      subject: 'Base de Datos',
-      professor: 'Lic. Martha Gómez',
-      completed: true,
-    },
-  ]);
+  // Lista de tareas vacía por defecto para nuevos usuarios
+  const [tasks, setTasks] = useState<Task[]>([]);
 
-  // Agregar nueva tarea
   const handleAddTask = () => {
     if (!taskTitle.trim() || !subjectName.trim()) return;
 
@@ -68,7 +47,7 @@ export default function TareasScreen() {
       id: Date.now().toString(),
       title: taskTitle.trim(),
       subject: subjectName.trim(),
-      professor: professorName.trim() || 'No especificado',
+      professor: professorName.trim() || t('tasks_no_professor'),
       completed: false,
     };
 
@@ -78,7 +57,6 @@ export default function TareasScreen() {
     setProfessorName('');
   };
 
-  // Abrir modal de edición con los datos actuales de la tarea
   const handleOpenEditModal = (task: Task) => {
     setEditingTaskId(task.id);
     setEditTitle(task.title);
@@ -87,7 +65,6 @@ export default function TareasScreen() {
     setIsEditModalVisible(true);
   };
 
-  // Guardar los cambios editados
   const handleSaveEdit = () => {
     if (!editTitle.trim() || !editSubject.trim()) return;
 
@@ -98,7 +75,7 @@ export default function TareasScreen() {
               ...task,
               title: editTitle.trim(),
               subject: editSubject.trim(),
-              professor: editProfessor.trim() || 'No especificado',
+              professor: editProfessor.trim() || t('tasks_no_professor'),
             }
           : task
       )
@@ -108,7 +85,6 @@ export default function TareasScreen() {
     setEditingTaskId(null);
   };
 
-  // Alternar estado de completado
   const toggleTaskComplete = (id: string) => {
     setTasks(
       tasks.map((task) =>
@@ -117,7 +93,6 @@ export default function TareasScreen() {
     );
   };
 
-  // Agrupar tareas por Asignatura
   const groupedTasks = tasks.reduce((acc, task) => {
     const key = task.subject;
     if (!acc[key]) {
@@ -133,22 +108,22 @@ export default function TareasScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {/* Encabezado */}
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Tareas Pendientes</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{t('tasks_header_title')}</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            Organiza y gestiona tus pendientes por clase
+            {t('tasks_header_subtitle')}
           </Text>
         </View>
 
         {/* Formulario para agregar tarea */}
         <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.formTitle, { color: colors.text }]}>Nueva Tarea</Text>
-          
+          <Text style={[styles.formTitle, { color: colors.text }]}>{t('tasks_form_title')}</Text>
+
           <TextInput
             style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-            placeholder="Nombre de la tarea..."
+            placeholder={t('tasks_title_placeholder')}
             placeholderTextColor={colors.textSecondary}
             value={taskTitle}
             onChangeText={setTaskTitle}
@@ -157,7 +132,7 @@ export default function TareasScreen() {
           <View style={styles.rowInputs}>
             <TextInput
               style={[styles.input, styles.halfInput, { color: colors.text, borderColor: colors.border }]}
-              placeholder="Asignatura"
+              placeholder={t('tasks_subject_placeholder')}
               placeholderTextColor={colors.textSecondary}
               value={subjectName}
               onChangeText={setSubjectName}
@@ -165,7 +140,7 @@ export default function TareasScreen() {
 
             <TextInput
               style={[styles.input, styles.halfInput, { color: colors.text, borderColor: colors.border }]}
-              placeholder="Profesor"
+              placeholder={t('tasks_professor_placeholder')}
               placeholderTextColor={colors.textSecondary}
               value={professorName}
               onChangeText={setProfessorName}
@@ -174,77 +149,82 @@ export default function TareasScreen() {
 
           <TouchableOpacity style={styles.addButton} onPress={handleAddTask}>
             <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.addButtonText}>Agregar Tarea</Text>
+            <Text style={styles.addButtonText}>{t('tasks_add_button')}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Lista agrupada por Asignatura */}
-        {Object.keys(groupedTasks).map((subject) => {
-          const group = groupedTasks[subject];
-          return (
-            <View key={subject} style={styles.subjectGroup}>
-              {/* Encabezado de la Clase */}
-              <View style={styles.subjectHeader}>
-                <View style={styles.subjectBadge}>
-                  <Ionicons name="book-outline" size={16} color={colors.primary} />
-                  <Text style={[styles.subjectTitle, { color: colors.text }]}>{subject}</Text>
-                </View>
-                <Text style={[styles.professorText, { color: colors.textSecondary }]}>
-                  👨‍🏫 {group.professor}
-                </Text>
-              </View>
-
-              {/* Tareas de la Asignatura */}
-              {group.items.map((item) => (
-                <View
-                  key={item.id}
-                  style={[
-                    styles.taskCard,
-                    { backgroundColor: colors.surface },
-                    item.completed && styles.taskCompletedCard,
-                  ]}
-                >
-                  <TouchableOpacity
-                    style={styles.taskTitleContainer}
-                    onPress={() => toggleTaskComplete(item.id)}
-                  >
-                    <Text
-                      style={[
-                        styles.taskText,
-                        { color: colors.text },
-                        item.completed && styles.taskCompletedText,
-                      ]}
-                    >
-                      {item.title}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <View style={styles.actionButtons}>
-                    {/* Botón Editar */}
-                    <TouchableOpacity
-                      onPress={() => handleOpenEditModal(item)}
-                      style={styles.iconButton}
-                    >
-                      <Ionicons name="create-outline" size={20} color={colors.primary} />
-                    </TouchableOpacity>
-
-                    {/* Checkbox Completado */}
-                    <TouchableOpacity
-                      onPress={() => toggleTaskComplete(item.id)}
-                      style={styles.iconButton}
-                    >
-                      <Ionicons
-                        name={item.completed ? 'checkbox' : 'square-outline'}
-                        size={22}
-                        color={item.completed ? '#4CAF50' : colors.primary}
-                      />
-                    </TouchableOpacity>
+        {/* Mensaje de estado vacío si no hay tareas */}
+        {tasks.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="checkmark-done-circle-outline" size={48} color={colors.textSecondary} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              {t('tasks_empty_message')}
+            </Text>
+          </View>
+        ) : (
+          Object.keys(groupedTasks).map((subject) => {
+            const group = groupedTasks[subject];
+            return (
+              <View key={subject} style={styles.subjectGroup}>
+                <View style={styles.subjectHeader}>
+                  <View style={styles.subjectBadge}>
+                    <Ionicons name="book-outline" size={16} color={colors.primary} />
+                    <Text style={[styles.subjectTitle, { color: colors.text }]}>{subject}</Text>
                   </View>
+                  <Text style={[styles.professorText, { color: colors.textSecondary }]}>
+                    👨‍🏫 {group.professor}
+                  </Text>
                 </View>
-              ))}
-            </View>
-          );
-        })}
+
+                {group.items.map((item) => (
+                  <View
+                    key={item.id}
+                    style={[
+                      styles.taskCard,
+                      { backgroundColor: colors.surface },
+                      item.completed && styles.taskCompletedCard,
+                    ]}
+                  >
+                    <TouchableOpacity
+                      style={styles.taskTitleContainer}
+                      onPress={() => toggleTaskComplete(item.id)}
+                    >
+                      <Text
+                        style={[
+                          styles.taskText,
+                          { color: colors.text },
+                          item.completed && styles.taskCompletedText,
+                        ]}
+                      >
+                        {item.title}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity
+                        onPress={() => handleOpenEditModal(item)}
+                        style={styles.iconButton}
+                      >
+                        <Ionicons name="create-outline" size={20} color={colors.primary} />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => toggleTaskComplete(item.id)}
+                        style={styles.iconButton}
+                      >
+                        <Ionicons
+                          name={item.completed ? 'checkbox' : 'square-outline'}
+                          size={22}
+                          color={item.completed ? '#4CAF50' : colors.primary}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            );
+          })
+        )}
 
       </ScrollView>
 
@@ -257,23 +237,23 @@ export default function TareasScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Editar Tarea y Profesor</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('tasks_edit_modal_title')}</Text>
 
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Nombre de la tarea</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('tasks_edit_title_label')}</Text>
             <TextInput
               style={[styles.input, { color: colors.text, borderColor: colors.border }]}
               value={editTitle}
               onChangeText={setEditTitle}
             />
 
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Asignatura</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('tasks_edit_subject_label')}</Text>
             <TextInput
               style={[styles.input, { color: colors.text, borderColor: colors.border }]}
               value={editSubject}
               onChangeText={setEditSubject}
             />
 
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Nombre del Profesor</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('tasks_edit_professor_label')}</Text>
             <TextInput
               style={[styles.input, { color: colors.text, borderColor: colors.border }]}
               value={editProfessor}
@@ -285,14 +265,14 @@ export default function TareasScreen() {
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setIsEditModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                <Text style={styles.cancelButtonText}>{t('tasks_cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, styles.saveButton]}
                 onPress={handleSaveEdit}
               >
-                <Text style={styles.saveButtonText}>Guardar</Text>
+                <Text style={styles.saveButtonText}>{t('tasks_save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -304,25 +284,11 @@ export default function TareasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  header: {
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
+  container: { flex: 1 },
+  scrollContent: { padding: 16, paddingBottom: 32 },
+  header: { marginTop: 8, marginBottom: 16 },
+  headerTitle: { fontSize: 26, fontWeight: 'bold' },
+  headerSubtitle: { fontSize: 13, marginTop: 2 },
   formCard: {
     borderRadius: 14,
     padding: 14,
@@ -333,11 +299,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
   },
-  formTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 10,
-  },
+  formTitle: { fontSize: 15, fontWeight: '600', marginBottom: 10 },
   input: {
     borderWidth: 1,
     borderRadius: 10,
@@ -346,13 +308,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 10,
   },
-  rowInputs: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  halfInput: {
-    flex: 1,
-  },
+  rowInputs: { flexDirection: 'row', gap: 8 },
+  halfInput: { flex: 1 },
   addButton: {
     backgroundColor: '#1d6395',
     flexDirection: 'row',
@@ -363,14 +320,19 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 2,
   },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 15,
+  addButtonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 15 },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 40,
+    paddingHorizontal: 20,
   },
-  subjectGroup: {
-    marginBottom: 18,
+  emptyText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
   },
+  subjectGroup: { marginBottom: 18 },
   subjectHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -378,19 +340,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 4,
   },
-  subjectBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  subjectTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  professorText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
+  subjectBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  subjectTitle: { fontSize: 16, fontWeight: '700' },
+  professorText: { fontSize: 12, fontWeight: '500' },
   taskCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -404,29 +356,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
-  taskCompletedCard: {
-    opacity: 0.6,
-  },
-  taskTitleContainer: {
-    flex: 1,
-    marginRight: 8,
-  },
-  taskText: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  taskCompletedText: {
-    textDecorationLine: 'line-through',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  iconButton: {
-    padding: 4,
-  },
-  // Estilos del Modal
+  taskCompletedCard: { opacity: 0.6 },
+  taskTitleContainer: { flex: 1, marginRight: 8 },
+  taskText: { fontSize: 15, fontWeight: '500' },
+  taskCompletedText: { textDecorationLine: 'line-through' },
+  actionButtons: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  iconButton: { padding: 4 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -434,45 +369,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  modalContent: {
-    width: '100%',
-    borderRadius: 16,
-    padding: 20,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 10,
-    marginTop: 12,
-  },
-  modalButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-  },
-  cancelButton: {
-    backgroundColor: '#E0E0E0',
-  },
-  cancelButtonText: {
-    color: '#333333',
-    fontWeight: '600',
-  },
-  saveButton: {
-    backgroundColor: '#1d6395',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
+  modalContent: { width: '100%', borderRadius: 16, padding: 20, elevation: 5 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+  label: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 12 },
+  modalButton: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 8 },
+  cancelButton: { backgroundColor: '#E0E0E0' },
+  cancelButtonText: { color: '#333333', fontWeight: '600' },
+  saveButton: { backgroundColor: '#1d6395' },
+  saveButtonText: { color: '#FFFFFF', fontWeight: '600' },
 });

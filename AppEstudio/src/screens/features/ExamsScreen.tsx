@@ -1,4 +1,3 @@
-// 1. IMPORTACIONES DE REACT Y REACT NATIVE
 import React, { useState } from 'react';
 import {
   View,
@@ -9,11 +8,9 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// Importación del hook para el tema (Modo Claro/Oscuro)
 import { useTheme } from '../../Context/ThemeNavigator';
+import { useLanguage } from '../../Context/LanguageContext';
 
-// 2. DEFINICIÓN DE TIPOS (TYPESCRIPT)
 interface Exam {
   id: string;
   subject: string;
@@ -23,22 +20,16 @@ interface Exam {
 }
 
 export default function ExamsScreen() {
-  // 3. CONTEXTO Y ESTADOS LOCALES
   const { colors } = useTheme();
+  const { t } = useLanguage();
 
-  // Lista de exámenes iniciales de ejemplo
-  const [exams, setExams] = useState<Exam[]>([
-    { id: '1', subject: 'Prog. Móvil', title: 'Examen Parcial 1', date: '2026-09-28', time: '18:00' },
-    { id: '2', subject: 'Base de Datos', title: 'Evaluación Práctica', date: '2026-10-02', time: '14:00' },
-  ]);
+  const [exams, setExams] = useState<Exam[]>([]);
 
-  // Estados para el formulario de registro
   const [subject, setSubject] = useState('');
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
 
-  // 4. FUNCIONES LÓGICAS
   const handleAddExam = () => {
     if (!subject.trim() || !title.trim() || !date.trim()) return;
 
@@ -52,36 +43,34 @@ export default function ExamsScreen() {
 
     setExams([...exams, newExam]);
 
-    // Limpiar campos
     setSubject('');
     setTitle('');
     setDate('');
     setTime('');
   };
 
-  // 5. INTERFAZ VISUAL (RENDER)
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      
+
       {/* Encabezado */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Calendario de Exámenes</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('exams_header_title')}</Text>
       </View>
 
-      {/* Formulario para registrar un nuevo examen */}
+      {/* Formulario */}
       <View style={[styles.formContainer, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.formTitle, { color: colors.text }]}>Programar Nuevo Examen</Text>
-        
+        <Text style={[styles.formTitle, { color: colors.text }]}>{t('exams_form_title')}</Text>
+
         <TextInput
           style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-          placeholder="Materia (ej. Prog. Móvil)..."
+          placeholder={t('exams_subject_placeholder')}
           placeholderTextColor={colors.textSecondary}
           value={subject}
           onChangeText={setSubject}
         />
         <TextInput
           style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-          placeholder="Nombre/Descripción del examen..."
+          placeholder={t('exams_description_placeholder')}
           placeholderTextColor={colors.textSecondary}
           value={title}
           onChangeText={setTitle}
@@ -89,14 +78,14 @@ export default function ExamsScreen() {
         <View style={styles.rowInputs}>
           <TextInput
             style={[styles.input, styles.halfInput, { color: colors.text, borderColor: colors.border }]}
-            placeholder="Fecha (AAAA-MM-DD)"
+            placeholder={t('exams_date_placeholder')}
             placeholderTextColor={colors.textSecondary}
             value={date}
             onChangeText={setDate}
           />
           <TextInput
             style={[styles.input, styles.halfInput, { color: colors.text, borderColor: colors.border }]}
-            placeholder="Hora (ej. 14:00)"
+            placeholder={t('exams_time_placeholder')}
             placeholderTextColor={colors.textSecondary}
             value={time}
             onChangeText={setTime}
@@ -104,34 +93,41 @@ export default function ExamsScreen() {
         </View>
 
         <TouchableOpacity style={styles.addButton} onPress={handleAddExam}>
-          <Text style={styles.addButtonText}>Guardar Examen</Text>
+          <Text style={styles.addButtonText}>{t('exams_save_button')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Lista de próximos exámenes */}
-      <Text style={[styles.subtitle, { color: colors.text }]}>Próximas Evaluaciones</Text>
+      <Text style={[styles.subtitle, { color: colors.text }]}>{t('exams_upcoming_title')}</Text>
 
-      <FlatList
-        data={exams}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={[styles.examCard, { backgroundColor: colors.surface }]}>
-            <View style={styles.examBadge}>
-              <Text style={styles.examBadgeText}>📅 {item.date}</Text>
-              <Text style={styles.examTimeText}>⏰ {item.time}</Text>
+      {exams.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            {t('exams_empty_message')}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={exams}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={[styles.examCard, { backgroundColor: colors.surface }]}>
+              <View style={styles.examBadge}>
+                <Text style={styles.examBadgeText}>📅 {item.date}</Text>
+                <Text style={styles.examTimeText}>⏰ {item.time}</Text>
+              </View>
+              <View style={styles.examInfo}>
+                <Text style={[styles.examSubject, { color: colors.text }]}>{item.subject}</Text>
+                <Text style={[styles.examTitle, { color: colors.textSecondary }]}>{item.title}</Text>
+              </View>
             </View>
-            <View style={styles.examInfo}>
-              <Text style={[styles.examSubject, { color: colors.text }]}>{item.subject}</Text>
-              <Text style={[styles.examTitle, { color: colors.textSecondary }]}>{item.title}</Text>
-            </View>
-          </View>
-        )}
-      />
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
-// 6. ESTILOS
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   header: { marginBottom: 16 },
@@ -174,4 +170,6 @@ const styles = StyleSheet.create({
   examInfo: { flex: 1 },
   examSubject: { fontSize: 16, fontWeight: 'bold' },
   examTitle: { fontSize: 13, marginTop: 2 },
+  emptyContainer: { alignItems: 'center', marginTop: 20 },
+  emptyText: { fontSize: 14 },
 });

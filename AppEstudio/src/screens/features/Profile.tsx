@@ -1,227 +1,170 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  Image,
-  TouchableOpacity,
   StyleSheet,
   ScrollView,
-  TextInput,
-  Modal,
+  TouchableOpacity,
   Alert,
-  ActivityIndicator,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
-import * as ImagePicker from 'expo-image-picker';
-
-import { supabase } from '../../lib/supabase'; // Ajusta la ruta a tu cliente de Supabase
 import { useTheme } from '../../Context/ThemeNavigator';
+import { useAuth } from '../../Context/AuthContext';
+import { useLanguage } from '../../Context/LanguageContext';
+import { supabase } from '../../lib/supabase';
 
 export default function ProfileScreen({ navigation }: any) {
-  const { colors } = useTheme();
+  const { colors, isDark, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
+  const { t } = useLanguage();
 
-  // Estados de carga e imagen
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  // Estados para Materias
+  const [subjectCount, setSubjectCount] = useState<number>(0);
+  const [tempSubjectCount, setTempSubjectCount] = useState<number>(0);
+  const [isEditingSubjects, setIsEditingSubjects] = useState<boolean>(false);
 
-  // Campos de perfil editables
-  const [fullName, setFullName] = useState('Estudiante');
-  const [username, setUsername] = useState('usuario');
-  const [university, setUniversity] = useState('UNITEC');
-  const [degree, setDegree] = useState('Ing. en Desarrollo de Software');
-  const [gender, setGender] = useState('No especificado');
+  // Estados de Información Académica (Perfil)
+  const [university, setUniversity] = useState<string>((user as any)?.university || 'Ceutec');
+  const [career, setCareer] = useState<string>((user as any)?.career || 'Ingeniería en Informática');
+  const [gender, setGender] = useState<string>(t('profile_gender_default'));
 
-  // Control de Modal
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  // Estados para Modal de Editar Perfil
+  const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
+  const [editUniversity, setEditUniversity] = useState(university);
+  const [editCareer, setEditCareer] = useState(career);
+  const [editGender, setEditGender] = useState(gender);
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  // Estado para Modal de Tema
+  const [isThemeModalVisible, setIsThemeModalVisible] = useState(false);
 
-  // 1. Obtener datos del usuario autenticado
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  // Estados para Modal de Cambiar Contraseña
+  const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-      if (session?.user) {
-        const user = session.user;
-        setUserEmail(user.email || '');
-
-        const meta = user.user_metadata || {};
-        if (meta.avatar_url) setProfileImage(meta.avatar_url);
-        if (meta.full_name) setFullName(meta.full_name);
-        if (meta.username) setUsername(meta.username);
-        if (meta.university) setUniversity(meta.university);
-        if (meta.degree) setDegree(meta.degree);
-        if (meta.gender) setGender(meta.gender);
-      }
-    } catch (error) {
-      console.error('Error al cargar datos del usuario:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleStartEditing = () => {
+    setTempSubjectCount(subjectCount);
+    setIsEditingSubjects(true);
   };
 
-  // 2. Guardar información editada en Supabase Metadata
-  const saveProfileData = async () => {
-    try {
-      setLoading(true);
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        Alert.alert('Error', 'Sesión expirada. Por favor, vuelve a iniciar sesión.');
-        return;
-      }
-
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          full_name: fullName,
-          username: username,
-          university: university,
-          degree: degree,
-          gender: gender,
-        },
-      });
-
-      if (error) throw error;
-
-      Alert.alert('¡Éxito!', 'Perfil actualizado correctamente.');
-      setIsEditModalVisible(false);
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'No se pudieron guardar los cambios.');
-    } finally {
-      setLoading(false);
-    }
+  const handleSaveSubjects = () => {
+    setSubjectCount(tempSubjectCount);
+    setIsEditingSubjects(false);
   };
 
-  // 3. Seleccionar y subir foto de perfil a Supabase Storage
-  const pickAndUploadImage = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        Alert.alert('Error', 'No hay una sesión activa.');
-        return;
-      }
-
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Permiso requerido', 'Se requiere acceso a la galería para cambiar la foto.');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-      });
-
-      if (result.canceled || !result.assets[0].uri) return;
-
-      setUploading(true);
-      const image = result.assets[0];
-      const response = await fetch(image.uri);
-      const blob = await response.blob();
-      const arrayBuffer = await new Response(blob).arrayBuffer();
-
-      const fileExt = image.uri.split('.').pop()?.toLowerCase() || 'jpeg';
-      const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, arrayBuffer, {
-          contentType: `image/${fileExt}`,
-          upsert: true,
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-      const publicUrl = publicUrlData.publicUrl;
-
-      await supabase.auth.updateUser({ data: { avatar_url: publicUrl } });
-      setProfileImage(publicUrl);
-      Alert.alert('¡Éxito!', 'Foto de perfil actualizada.');
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Error al subir la imagen.');
-    } finally {
-      setUploading(false);
-    }
+  const handleCancelEditing = () => {
+    setTempSubjectCount(subjectCount);
+    setIsEditingSubjects(false);
   };
 
-  // 4. Cerrar Sesión
-  const handleLogout = async () => {
-    Alert.alert('Cerrar Sesión', '¿Estás seguro de que deseas salir?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Salir',
-        style: 'destructive',
-        onPress: async () => {
-          await supabase.auth.signOut();
-          navigation.reset({ index: 0, routes: [{ name: 'LoginScreen' }] });
-        },
-      },
-    ]);
+  const handleOpenProfileModal = () => {
+    setEditUniversity(university);
+    setEditCareer(career);
+    setEditGender(gender);
+    setIsProfileModalVisible(true);
   };
 
-  if (loading && !isEditModalVisible) {
-    return (
-      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </SafeAreaView>
-    );
+  const handleSaveProfile = () => {
+    setUniversity(editUniversity.trim() || t('profile_university_default'));
+    setCareer(editCareer.trim() || t('profile_career_default'));
+    setGender(editGender.trim() || t('profile_gender_default'));
+    setIsProfileModalVisible(false);
+  };
+
+  const handleChangePassword = async () => {
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    Alert.alert(t('generic_error_title'), t('profile_password_error_empty'));
+    return;
   }
+  if (newPassword.length < 6) {
+    Alert.alert(t('generic_error_title'), t('profile_password_error_short'));
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    Alert.alert(t('generic_error_title'), t('profile_password_error_mismatch'));
+    return;
+  }
+
+  try {
+    // Verifica que la contraseña actual sea correcta antes de cambiarla
+    if (user?.email) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      if (signInError) {
+        Alert.alert(t('generic_error_title'), t('profile_current_password_wrong'));
+        return;
+      }
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+
+    Alert.alert(t('generic_success_title'), t('profile_password_success'));
+    setIsPasswordModalVisible(false);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  } catch (error: any) {
+    Alert.alert(t('generic_error_title'), error.message ?? t('change_password_generic_error'));
+  }
+};
+
+ const handleLogout = () => {
+  Alert.alert(t('profile_logout_button'), t('profile_logout_confirm_message'), [
+    { text: t('profile_cancel'), style: 'cancel' },
+    {
+      text: t('profile_logout_confirm'),
+      style: 'destructive',
+      onPress: async () => {
+        await logout();
+        navigation.reset({ index: 0, routes: [{ name: 'LoginScreen' }] });
+      },
+    },
+  ]);
+};
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* Encabezado Principal */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={[styles.avatarContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            onPress={pickAndUploadImage}
-            disabled={uploading}
-          >
-            {uploading ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : profileImage ? (
-              <Image source={{ uri: profileImage }} style={styles.avatarImage} />
-            ) : (
-              <Ionicons name="person" size={55} color={colors.primary} />
-            )}
 
-            <View style={[styles.activeBadge, { backgroundColor: '#4CAF50' }]} />
-            
-            <View style={[styles.cameraBadge, { backgroundColor: colors.primary }]}>
-              <Ionicons name="camera" size={12} color="#FFFFFF" />
-            </View>
-          </TouchableOpacity>
+        {/* AVATAR Y DATOS DE USUARIO */}
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarContainer}>
+            <Ionicons name="person" size={54} color={colors.primary} />
+            <TouchableOpacity style={styles.cameraBadge}>
+              <Ionicons name="camera" size={14} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
 
-          <Text style={[styles.userName, { color: colors.text }]}>{fullName}</Text>
-          <Text style={[styles.userHandle, { color: colors.textSecondary }]}>@{username}</Text>
-          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{userEmail}</Text>
+          <Text style={[styles.userName, { color: colors.text }]}>
+            {user?.fullName || t('profile_new_user_fallback')}
+          </Text>
+          <Text style={[styles.userHandle, { color: colors.textSecondary }]}>
+            @{user?.email?.split('@')[0] || t('profile_username_fallback')}
+          </Text>
+          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
+            {user?.email || t('profile_email_fallback')}
+          </Text>
 
-          <TouchableOpacity 
-            style={[styles.tag, { backgroundColor: '#20629122' }]}
-            onPress={() => setIsEditModalVisible(true)}
-          >
-            <Text style={styles.tagText}>Editar Perfil</Text>
+          <TouchableOpacity style={styles.editProfileButton} onPress={handleOpenProfileModal}>
+            <Text style={styles.editProfileText}>{t('profile_edit_button')}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Sección 1: Información Académica */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Información Académica</Text>
-        
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        {/* INFORMACIÓN ACADÉMICA */}
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('profile_academic_info_title')}</Text>
+
+        <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
           <View style={styles.infoRow}>
-            <Ionicons name="school-outline" size={22} color={colors.primary} />
+            <Ionicons name="school-outline" size={20} color={colors.primary} />
             <View style={styles.infoTextContainer}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Universidad</Text>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{t('profile_university_label')}</Text>
               <Text style={[styles.infoValue, { color: colors.text }]}>{university}</Text>
             </View>
           </View>
@@ -229,131 +172,303 @@ export default function ProfileScreen({ navigation }: any) {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.infoRow}>
-            <Ionicons name="book-outline" size={22} color={colors.primary} />
+            <Ionicons name="book-outline" size={20} color={colors.primary} />
             <View style={styles.infoTextContainer}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Carrera</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{degree}</Text>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{t('profile_career_label')}</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{career}</Text>
             </View>
           </View>
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.infoRow}>
-            <Ionicons name="transgender-outline" size={22} color={colors.primary} />
+            <Ionicons name="transgender-outline" size={20} color={colors.primary} />
             <View style={styles.infoTextContainer}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Género</Text>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{t('profile_gender_label')}</Text>
               <Text style={[styles.infoValue, { color: colors.text }]}>{gender}</Text>
             </View>
           </View>
         </View>
 
-        {/* Bloques de Estadísticas Rápidas (Materias / Horas) */}
-        <View style={styles.statsRow}>
-          <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.statNumber, { color: colors.primary }]}>4</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Materias</Text>
+        {/* SECTOR MATERIAS */}
+        <View style={[styles.subjectCard, { backgroundColor: colors.surface }]}>
+          <View style={styles.subjectHeaderRow}>
+            <Text style={[styles.subjectCardTitle, { color: colors.textSecondary }]}>
+              {t('profile_subjects_title')}
+            </Text>
+
+            {!isEditingSubjects && (
+              <TouchableOpacity style={styles.actionIconButton} onPress={handleStartEditing}>
+                <Ionicons name="create-outline" size={18} color={colors.primary} />
+                <Text style={[styles.actionIconText, { color: colors.primary }]}>{t('profile_edit_link')}</Text>
+              </TouchableOpacity>
+            )}
           </View>
-          <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.statNumber, { color: colors.primary }]}>12 h</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Semana actual</Text>
-          </View>
+
+          {isEditingSubjects ? (
+            <View style={styles.editModeContainer}>
+              <View style={styles.counterRow}>
+                <TouchableOpacity
+                  style={[styles.counterButton, { backgroundColor: colors.border }]}
+                  onPress={() => setTempSubjectCount(prev => Math.max(0, prev - 1))}
+                >
+                  <Ionicons name="remove" size={20} color={colors.text} />
+                </TouchableOpacity>
+
+                <Text style={[styles.subjectCountText, { color: colors.text }]}>
+                  {tempSubjectCount}
+                </Text>
+
+                <TouchableOpacity
+                  style={[styles.counterButton, { backgroundColor: colors.primary }]}
+                  onPress={() => setTempSubjectCount(prev => prev + 1)}
+                >
+                  <Ionicons name="add" size={20} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.confirmButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.confirmBtn, styles.cancelBtn]}
+                  onPress={handleCancelEditing}
+                >
+                  <Text style={styles.cancelBtnText}>{t('profile_cancel')}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.confirmBtn, styles.saveBtn]}
+                  onPress={handleSaveSubjects}
+                >
+                  <Text style={styles.saveBtnText}>{t('profile_accept')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.readModeContainer}>
+              <Text style={[styles.displayCountText, { color: colors.text }]}>
+                {subjectCount}
+              </Text>
+              <Text style={[styles.displaySubtext, { color: colors.textSecondary }]}>
+                {subjectCount === 1 ? t('profile_subject_singular') : t('profile_subject_plural')}
+              </Text>
+            </View>
+          )}
         </View>
 
-        {/* Sección 2: Opciones de Cuenta */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Opciones de Cuenta</Text>
-        
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <TouchableOpacity style={styles.optionRow}>
-            <Ionicons name="lock-closed-outline" size={20} color={colors.text} />
-            <Text style={[styles.optionText, { color: colors.text }]}>Cambiar contraseña</Text>
+        {/* OPCIONES DE CUENTA */}
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('profile_account_options_title')}</Text>
+
+        <View style={[styles.optionsCard, { backgroundColor: colors.surface }]}>
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() => setIsPasswordModalVisible(true)}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="lock-closed-outline" size={20} color={colors.text} />
+              <Text style={[styles.optionText, { color: colors.text }]}>{t('profile_change_password_option')}</Text>
+            </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          <TouchableOpacity style={styles.optionRow}>
-            <Ionicons name="color-palette-outline" size={20} color={colors.text} />
-            <Text style={[styles.optionText, { color: colors.text }]}>Preferencia de Tema</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() => setIsThemeModalVisible(true)}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="color-palette-outline" size={20} color={colors.text} />
+              <Text style={[styles.optionText, { color: colors.text }]}>{t('profile_theme_preference_option')}</Text>
+            </View>
+            <View style={styles.themeBadgeContainer}>
+              <Text style={[styles.themeBadgeText, { color: colors.textSecondary }]}>
+                {isDark ? t('profile_theme_dark') : t('profile_theme_light')}
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            </View>
           </TouchableOpacity>
         </View>
 
-        {/* Botón de Cerrar Sesión Rojo */}
+        {/* CERRAR SESIÓN */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color="#ffffff" />
-          <Text style={styles.logoutText}>Cerrar Sesión</Text>
+          <Text style={styles.logoutText}>{t('profile_logout_button')}</Text>
         </TouchableOpacity>
 
       </ScrollView>
 
-      {/* MODAL PARA EDITAR TODOS LOS DATOS */}
-      <Modal visible={isEditModalVisible} animationType="slide" transparent>
+      {/* 1. MODAL EDITAR PERFIL */}
+      <Modal
+        visible={isProfileModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsProfileModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Editar Perfil</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('profile_edit_modal_title')}</Text>
 
-            <ScrollView style={{ width: '100%' }}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre completo</Text>
-              <TextInput
-                style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder="Nombre completo"
-                placeholderTextColor={colors.textSecondary}
-              />
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('profile_university_label')}</Text>
+            <TextInput
+              style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+              value={editUniversity}
+              onChangeText={setEditUniversity}
+              placeholder={t('profile_university_placeholder')}
+              placeholderTextColor={colors.textSecondary}
+            />
 
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre de usuario</Text>
-              <TextInput
-                style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
-                value={username}
-                onChangeText={setUsername}
-                placeholder="Nombre de usuario"
-                placeholderTextColor={colors.textSecondary}
-              />
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('profile_career_label')}</Text>
+            <TextInput
+              style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+              value={editCareer}
+              onChangeText={setEditCareer}
+              placeholder={t('profile_career_placeholder')}
+              placeholderTextColor={colors.textSecondary}
+            />
 
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Universidad</Text>
-              <TextInput
-                style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
-                value={university}
-                onChangeText={setUniversity}
-                placeholder="Universidad"
-                placeholderTextColor={colors.textSecondary}
-              />
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('profile_gender_label')}</Text>
+            <TextInput
+              style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+              value={editGender}
+              onChangeText={setEditGender}
+              placeholder={t('profile_gender_placeholder')}
+              placeholderTextColor={colors.textSecondary}
+            />
 
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Carrera</Text>
-              <TextInput
-                style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
-                value={degree}
-                onChangeText={setDegree}
-                placeholder="Carrera"
-                placeholderTextColor={colors.textSecondary}
-              />
-
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Género</Text>
-              <TextInput
-                style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
-                value={gender}
-                onChangeText={setGender}
-                placeholder="Género"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </ScrollView>
-
-            <View style={styles.modalButtonsRow}>
+            <View style={styles.modalActionsRow}>
               <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: '#888' }]}
-                onPress={() => setIsEditModalVisible(false)}
+                style={[styles.modalBtn, styles.modalCancelBtn]}
+                onPress={() => setIsProfileModalVisible(false)}
               >
-                <Text style={styles.modalBtnText}>Cancelar</Text>
+                <Text style={styles.modalCancelText}>{t('profile_cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: colors.primary }]}
-                onPress={saveProfileData}
+                style={[styles.modalBtn, styles.modalSaveBtn]}
+                onPress={handleSaveProfile}
               >
-                <Text style={styles.modalBtnText}>Guardar</Text>
+                <Text style={styles.modalSaveText}>{t('profile_save')}</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 2. MODAL CAMBIAR CONTRASEÑA */}
+      <Modal
+        visible={isPasswordModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsPasswordModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('profile_change_password_title')}</Text>
+
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('profile_current_password_label')}</Text>
+            <TextInput
+              style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              secureTextEntry
+              placeholder="••••••••"
+              placeholderTextColor={colors.textSecondary}
+            />
+
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('profile_new_password_label')}</Text>
+            <TextInput
+              style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+              placeholder="••••••••"
+              placeholderTextColor={colors.textSecondary}
+            />
+
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('profile_confirm_password_label')}</Text>
+            <TextInput
+              style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              placeholder="••••••••"
+              placeholderTextColor={colors.textSecondary}
+            />
+
+            <View style={styles.modalActionsRow}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalCancelBtn]}
+                onPress={() => {
+                  setIsPasswordModalVisible(false);
+                  setCurrentPassword('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                }}
+              >
+                <Text style={styles.modalCancelText}>{t('profile_cancel')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalSaveBtn]}
+                onPress={handleChangePassword}
+              >
+                <Text style={styles.modalSaveText}>{t('profile_update_button')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 3. MODAL PREFERENCIA DE TEMA */}
+      <Modal
+        visible={isThemeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsThemeModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('profile_theme_modal_title')}</Text>
+
+            <TouchableOpacity
+              style={[
+                styles.themeOptionRow,
+                !isDark && { backgroundColor: colors.border + '33' },
+              ]}
+              onPress={() => {
+                if (isDark) toggleTheme();
+                setIsThemeModalVisible(false);
+              }}
+            >
+              <View style={styles.themeOptionLeft}>
+                <Ionicons name="sunny-outline" size={22} color="#FFB300" />
+                <Text style={[styles.themeOptionText, { color: colors.text }]}>{t('profile_theme_light_option')}</Text>
+              </View>
+              {!isDark && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.themeOptionRow,
+                isDark && { backgroundColor: colors.border + '33' },
+              ]}
+              onPress={() => {
+                if (!isDark) toggleTheme();
+                setIsThemeModalVisible(false);
+              }}
+            >
+              <View style={styles.themeOptionLeft}>
+                <Ionicons name="moon-outline" size={22} color="#7E57C2" />
+                <Text style={[styles.themeOptionText, { color: colors.text }]}>{t('profile_theme_dark_option')}</Text>
+              </View>
+              {isDark && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalBtn, styles.modalCancelBtn, { marginTop: 16 }]}
+              onPress={() => setIsThemeModalVisible(false)}
+            >
+              <Text style={styles.modalCancelText}>{t('profile_close')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -364,102 +479,83 @@ export default function ProfileScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scrollContent: { padding: 16 },
-  header: { alignItems: 'center', marginVertical: 12 },
+  scrollContent: { padding: 16, paddingBottom: 32 },
+  profileHeader: { alignItems: 'center', marginBottom: 20 },
   avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 2,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
     marginBottom: 10,
-  },
-  avatarImage: { width: '100%', height: '100%', borderRadius: 50 },
-  activeBadge: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    position: 'absolute',
-    bottom: 2,
-    right: 6,
-    borderWidth: 2,
-    borderColor: '#ffffff',
+    position: 'relative',
   },
   cameraBadge: {
     position: 'absolute',
-    top: 0,
-    right: 0,
-    padding: 5,
+    top: 2,
+    right: 2,
+    backgroundColor: '#1d6395',
+    padding: 6,
     borderRadius: 12,
   },
-  userName: { fontSize: 22, fontWeight: 'bold' },
-  userHandle: { fontSize: 13, marginTop: 1 },
-  userEmail: { fontSize: 13, marginTop: 2 },
-  tag: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 12, marginTop: 8 },
-  tagText: { color: '#206291', fontWeight: '600', fontSize: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginTop: 18, marginBottom: 10 },
-  card: { borderRadius: 12, padding: 14 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
-  infoTextContainer: { marginLeft: 12, flex: 1 },
-  infoLabel: { fontSize: 12 },
-  infoValue: { fontSize: 15, fontWeight: '600', marginTop: 1 },
-  statsRow: { flexDirection: 'row', gap: 12, marginTop: 12 },
-  statBox: { flex: 1, borderRadius: 12, padding: 16, alignItems: 'center' },
-  statNumber: { fontSize: 22, fontWeight: 'bold' },
-  statLabel: { fontSize: 12, marginTop: 2 },
-  optionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, gap: 10 },
-  optionText: { flex: 1, fontSize: 15, fontWeight: '500' },
-  divider: { height: 1, marginVertical: 8 },
-  logoutButton: {
-    backgroundColor: '#d32f2f',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 14,
-    borderRadius: 10,
-    marginTop: 24,
-    marginBottom: 16,
-    gap: 8,
-  },
-  logoutText: { color: '#ffffff', fontWeight: 'bold', fontSize: 16 },
-
-  /* Modal */
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  modalContent: {
+  userName: { fontSize: 20, fontWeight: 'bold' },
+  userHandle: { fontSize: 13, marginTop: 2 },
+  userEmail: { fontSize: 12, marginTop: 1 },
+  editProfileButton: {
+    backgroundColor: '#E0E0E0',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
     borderRadius: 16,
-    padding: 20,
-    maxHeight: '80%',
-    alignItems: 'center',
+    marginTop: 10,
   },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 14 },
-  inputLabel: { fontSize: 12, alignSelf: 'flex-start', marginTop: 10, marginBottom: 4 },
-  modalInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-    width: '100%',
-  },
-  modalButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 20,
-    gap: 10,
-  },
-  modalBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalBtnText: { color: '#FFF', fontWeight: 'bold' },
+  editProfileText: { fontSize: 12, fontWeight: '600', color: '#333333' },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10, marginTop: 10 },
+  infoCard: { borderRadius: 12, padding: 14, marginBottom: 14 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  infoTextContainer: { flex: 1 },
+  infoLabel: { fontSize: 11 },
+  infoValue: { fontSize: 14, fontWeight: '600', marginTop: 2 },
+  divider: { height: 1, marginVertical: 10 },
+  subjectCard: { borderRadius: 12, padding: 16, marginBottom: 16 },
+  subjectHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  subjectCardTitle: { fontSize: 13, fontWeight: '600' },
+  actionIconButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  actionIconText: { fontSize: 13, fontWeight: '600' },
+  readModeContainer: { alignItems: 'center', paddingVertical: 6 },
+  displayCountText: { fontSize: 32, fontWeight: 'bold' },
+  displaySubtext: { fontSize: 12, fontWeight: '500', marginTop: 2 },
+  editModeContainer: { alignItems: 'center', marginTop: 6 },
+  counterRow: { flexDirection: 'row', alignItems: 'center', gap: 24, marginBottom: 14 },
+  counterButton: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  subjectCountText: { fontSize: 26, fontWeight: 'bold' },
+  confirmButtonsRow: { flexDirection: 'row', gap: 12, width: '100%', justifyContent: 'center' },
+  confirmBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 8, minWidth: 100, alignItems: 'center' },
+  cancelBtn: { backgroundColor: '#E0E0E0' },
+  cancelBtnText: { color: '#333333', fontWeight: '600', fontSize: 13 },
+  saveBtn: { backgroundColor: '#1d6395' },
+  saveBtnText: { color: '#FFFFFF', fontWeight: '600', fontSize: 13 },
+  optionsCard: { borderRadius: 12, padding: 14, marginBottom: 24 },
+  optionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
+  optionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  optionText: { fontSize: 14, fontWeight: '500' },
+  themeBadgeContainer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  themeBadgeText: { fontSize: 12, fontWeight: '500' },
+  logoutButton: { backgroundColor: '#D32F2F', paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+  logoutText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 15 },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContent: { width: '100%', borderRadius: 16, padding: 20, elevation: 5 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+  inputLabel: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
+  modalInput: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, marginBottom: 12 },
+  modalActionsRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
+  modalBtn: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 8, alignItems: 'center' },
+  modalCancelBtn: { backgroundColor: '#E0E0E0' },
+  modalCancelText: { color: '#333333', fontWeight: '600' },
+  modalSaveBtn: { backgroundColor: '#1d6395' },
+  modalSaveText: { color: '#FFFFFF', fontWeight: '600' },
+  themeOptionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderRadius: 10, marginBottom: 8 },
+  themeOptionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  themeOptionText: { fontSize: 15, fontWeight: '600' },
 });

@@ -1,27 +1,33 @@
 import React, { useState } from "react";
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { KeyboardTypeOptions, StyleSheet, TextInput, TouchableOpacity, View, Text } from "react-native";
+import { getFieldError } from "../utils/validators";
 
 type CustomInputProps = {
-    placeholder: string;
-    value: string;
-    onChangeText: (text:string) => void;
-    type?: "default" | "password" | "email" | "number" | "user";
+  placeholder: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  type?: "default" | "password" | "email" | "number" | "user";
+  required?: boolean;
+  forceShowError?: boolean;
 };
 
 export default function CustomInput({
-    placeholder,
+  placeholder,
   value,
   onChangeText,
-  type = "default"
+  type = "default",
+  required = true,
+  forceShowError = false,
 }: CustomInputProps) {
   const [isSecureText, setIsSecureText] = useState(type === "password");
+  const [touched, setTouched] = useState(false);
   const isPasswordField = type === "password";
 
-  const iconName: (typeof MaterialIcons)["name"] | undefined =
+  const iconName: React.ComponentProps<typeof MaterialIcons>["name"] | undefined =
     type === "password" ? "lock" :
       type === "email" ? "alternate-email" :
-        type === "number" ? "phone": 
+        type === "number" ? "phone" :
           type === "user" ? "person" : undefined;
 
   const keyboardType: KeyboardTypeOptions =
@@ -31,27 +37,17 @@ export default function CustomInput({
         ? "number-pad"
         : "default";
 
-  // Validación rápida de errores
-  const getError = () => {
-    if (type === "email" && value.length > 0 && !value.includes("@")) {
-      return "Correo inválido";
-    }
-    if (type === "password" && value.length > 0 && value.length < 6) {
-      return "La contraseña es débil";
-    }
-    return null;
-  };
-
-  const error = getError();
+  const error = getFieldError(type, value, required);
+  const showError = (touched || forceShowError) && error !== null;
 
   return (
     <View style={styles.wrapper}>
-      <View style={[styles.inputContainer, error ? styles.inputError : null]}>
-        {iconName && <MaterialIcons name={iconName as any} size={20} color="#206291" style={styles.leftIcon} />}
-        
+      <View style={[styles.inputContainer, showError ? styles.inputError : null]}>
+        {iconName && <MaterialIcons name={iconName} size={20} color="#206291" style={styles.leftIcon} />}
         <TextInput
           style={styles.input}
           onChangeText={onChangeText}
+          onBlur={() => setTouched(true)}
           value={value}
           placeholder={placeholder}
           placeholderTextColor="#888"
@@ -59,50 +55,25 @@ export default function CustomInput({
           secureTextEntry={isSecureText}
           autoCapitalize="none"
         />
-
         {isPasswordField && (
           <TouchableOpacity onPress={() => setIsSecureText(!isSecureText)}>
             <Ionicons name={isSecureText ? "eye-off" : "eye"} size={20} color="#206291" />
           </TouchableOpacity>
         )}
       </View>
-
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {showError && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    width: '100%',
-    marginBottom: 12,
-  },
+  wrapper: { width: '100%', marginBottom: 12 },
   inputContainer: {
-    backgroundColor: '#F0F4F8',
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 8,
-    borderColor: '#D0D7DE',
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    height: 48,
+    backgroundColor: '#F0F4F8', flexDirection: 'row', alignItems: 'center',
+    borderRadius: 8, borderColor: '#D0D7DE', borderWidth: 1, paddingHorizontal: 12, height: 48,
   },
-  leftIcon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 14,
-    color: '#333',
-  },
-  inputError: {
-    borderColor: '#D9534F',
-    borderWidth: 1.5,
-  },
-  errorText: {
-    color: '#D9534F',
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
-  },
+  leftIcon: { marginRight: 8 },
+  input: { flex: 1, fontSize: 14, color: '#333' },
+  inputError: { borderColor: '#D9534F', borderWidth: 1.5 },
+  errorText: { color: '#D9534F', fontSize: 12, marginTop: 4, marginLeft: 4 },
 });
