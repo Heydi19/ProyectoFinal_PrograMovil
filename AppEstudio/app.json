@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.heydi19.AppEstudio"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -25,6 +26,11 @@
     "plugins": [
       "expo-localization",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e9e04bbb-0b4d-4da1-b096-d17b612e970d"
+      }
+    }
   }
 }

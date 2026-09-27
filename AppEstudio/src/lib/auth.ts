@@ -5,7 +5,7 @@ import { supabase } from './supabase';
 WebBrowser.maybeCompleteAuthSession();
 
 export async function loginConGoogle() {
-  const redirectTo = Linking.createURL('auth/callback');
+  const redirectTo = Linking.createURL('/');
   console.log('redirectTo:', redirectTo);
 
   const { data, error } = await supabase.auth.signInWithOAuth({
